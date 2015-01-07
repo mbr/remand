@@ -1,29 +1,7 @@
+from six.moves import shlex_quote
+
 from paramiko import SSHClient
-
-PARASITE = """
-#!/usr/bin/python
-
-from struct import unpack, calcsize
-from sys import stdin, stdout
-
-HEADER_FMT = '!Q'
-HEADER_SIZE = calcsize(HEADER_FMT)
-
-PICKLE_PROTOCOL = 2
-
-while True:
-    len = unpack(HEADER_FMT, stdin.read(HEADER_SIZE)
-    data = stdin.read(len)
-
-    # error checking....
-
-    reply = {
-        'type': 'echo',
-        'payload': data,
-    }
-
-    stdout.write(pickle.dumps(reply, PICKLE_PROTOCOL))
-"""
+from paramiko.client import AutoAddPolicy, RejectPolicy
 
 
 class CommandResult(object):
@@ -40,29 +18,52 @@ class CommandResult(object):
             ))
 
 
+class SSHError(Exception):
+    pass
+
+
 class ParasiteConnection(object):
-    @classmethod
-    def connect(cls, *args, **kwargs):
-        client = SSHClient()
-        client.load_system_host_keys()
-        client.connect(*args, **kwargs)
-        return cls(client)
+    _sftp = None
+    _ssh = None
 
-    def __init__(self, client, timeout=2):
-        self.client = client
-        self.timeout = timeout
+    @property
+    def sftp(self):
+        if not self._sftp:
+            self._sftp = self.ssh.open_sftp()
+        return self._sftp
 
-        r = self.run_command(['mktemp'])
-        r.raise_for_status()
-        remote_fn = r.stdout.strip()
+    @property
+    def ssh(self):
+        if not self._ssh:
+            raise SSHError('Not connected')
+        return self._ssh
 
-        r = self.run_command(['tee', 'remote_fn'], input=PARASITE)
-        r.raise_for_status()
-        import pdb
-        pdb.set_trace()
+    def __init__(self,
+                 load_system_host_keys=True,
+                 auto_add_host_keys=False,
+                 cmd_timeout=2):
+        self.cmd_timeout = cmd_timeout
+        self.load_system_host_keys = load_system_host_keys
+        self.auto_add_host_keys = auto_add_host_keys
+
+    def connect(self, *args, **kwargs):
+        ssh = SSHClient()
+        if self.load_system_host_keys:
+            ssh.load_system_host_keys()
+        rej_policy = (AutoAddPolicy() if self.auto_add_host_keys else
+                      RejectPolicy())
+        ssh.set_missing_host_key_policy(rej_policy)
+
+        ssh.connect(*args, **kwargs)
+        self._ssh = ssh
+
+    def exec_command(self, cmd, *args, **kwargs):
+        if isinstance(cmd, list):
+            cmd = ' '.join(shlex_quote(part) for part in cmd)
+        return self.ssh.exec_command(cmd)
 
     def run_command(self, args, input=None, timeout=None):
-        timeout = timeout or self.timeout
+        timeout = timeout or self.cmd_timeout
 
         # build command
         command = ' '.join(args)  # FIXME
@@ -98,9 +99,3 @@ class ParasiteConnection(object):
             stderr=stderr.read(),
             exit_status=exit_status,
         )
-
-
-
-p = ParasiteConnection.connect('gitpi',
-                               username='pi',
-                               password='raspberry')

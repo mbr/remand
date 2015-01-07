@@ -17,5 +17,11 @@ def zipup_package(pkg_path, outfile=None, compression=zipfile.ZIP_DEFLATED):
             relname = pyfile.relative_to(pkg_path)
             z.write(str(pyfile), str(relname))
 
+        # add all .pyc files for which no .py files exist
+        for pycfile in pkg_path.glob('**/*.pyc'):
+            if not pycfile.with_suffix('.py').exists():
+                relname = pycfile.relative_to(pkg_path)
+                z.write(str(pycfile), str(relname))
+
     if outfile is None:
         return out.getvalue()

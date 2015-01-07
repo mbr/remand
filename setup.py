@@ -20,5 +20,5 @@ setup(
     url='http://github.com/mbr/remand',
     license='MIT',
     packages=find_packages(exclude=['tests']),
-    install_requires=['six', 'pathlib'],
+    install_requires=['six'],
 )

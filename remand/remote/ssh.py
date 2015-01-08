@@ -19,7 +19,7 @@ class SSHRemote(object):
             self._client.load_system_host_keys()
 
         rej_policy = (AutoAddPolicy()
-                      if config['ssh'].getboolean('allow_unknown_hosts')
+                      if config['ssh'].getboolean('disable_host_key_checking')
                       else RejectPolicy())
         self._client.set_missing_host_key_policy(rej_policy)
 

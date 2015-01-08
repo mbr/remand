@@ -77,6 +77,5 @@ def remand(script, hosts, configfiles):
                 _context.top['remote'] = remote
             except RemandError, e:
                 log.error(str(e))
-                continue
             finally:
                 _context.pop()

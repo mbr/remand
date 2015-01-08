@@ -9,7 +9,7 @@ import logbook
 from logbook.more import ColorizedStderrHandler
 
 from . import _context
-from .remote.ssh import SSHRemote
+from .remotes.ssh import SSHRemote
 from .exc import RemandError
 
 # core logger

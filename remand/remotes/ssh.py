@@ -1,8 +1,11 @@
+from functools import wraps
+
 from paramiko.client import SSHClient, AutoAddPolicy, RejectPolicy
 from paramiko.ssh_exception import SSHException
 
-from remand import config, log
-from remand.exc import TransportError
+from . import Remote
+from .. import config, log
+from ..exc import TransportError
 
 _KNOWN_HOSTS_ERROR = (
     "The host '{}' was not found in your known_hosts file. "
@@ -11,7 +14,19 @@ _KNOWN_HOSTS_ERROR = (
     "of a key-type mismatch.\n\n")
 
 
-class SSHRemote(object):
+def wrap_ssh_errors(f):
+    @wraps(f)
+    def _(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except SSHException, e:
+            raise TransportError('SSH: {}'.format(e))
+    return _
+
+
+class SSHRemote(Remote):
+    __sftp = None
+
     def __init__(self, hostname, username, port):
         self._client = SSHClient()
 
@@ -31,3 +46,13 @@ class SSHRemote(object):
             raise TransportError('SSH: {}'.format(e))
 
         log.info('SSH connection complete')
+
+    @property
+    def _sftp(self):
+        if not self.__sftp:
+            self.__sftp = self._client.open_sftp()
+        return self.__sftp
+
+    @wrap_ssh_errors
+    def getcwd(self):
+        return self._sftp.normalize('.')

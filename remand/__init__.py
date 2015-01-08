@@ -17,6 +17,6 @@ def _lookup_context(name):
 
 
 _context = LocalStack()
-transport = LocalProxy(partial(_lookup_context, 'transport'))
+remote = LocalProxy(partial(_lookup_context, 'remote'))
 config = LocalProxy(partial(_lookup_context, 'config'))
 log = LocalProxy(partial(_lookup_context, 'log'))

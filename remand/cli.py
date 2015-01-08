@@ -45,8 +45,6 @@ def hosts(ctx, param, value):
 @click.option('configfiles', '--config', '-c', envvar='REMAND_CONFIG',
               multiple=True, type=click.Path())
 def remand(module, hosts, configfiles):
-    # instantiate transport
-
     handler = ColorizedStderrHandler()
     with handler.applicationbound():
 

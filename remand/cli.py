@@ -51,8 +51,7 @@ def remand(module, hosts, configfiles):
     with handler.applicationbound():
 
         # instantiate the module
-        active_mod = imp.load_source('_remand_active_mod',
-                                             module)
+        active_mod = imp.load_source('_remand_active_mod', module)
 
         for host in hosts:
             _context.push({})

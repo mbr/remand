@@ -1,4 +1,5 @@
 import configparser
+import imp
 import os
 import re
 
@@ -46,7 +47,12 @@ def hosts(ctx, param, value):
               multiple=True, type=click.Path())
 def remand(module, hosts, configfiles):
     handler = ColorizedStderrHandler()
+
     with handler.applicationbound():
+
+        # instantiate the module
+        active_mod = imp.load_source('_remand_active_mod',
+                                             module)
 
         for host in hosts:
             _context.push({})
@@ -73,6 +79,9 @@ def remand(module, hosts, configfiles):
                                    hostname=host['host'],
                                    port=host['port'])
                 _context.top['remote'] = remote
+
+                log.debug('Running {}'.format(active_mod.__file__))
+                active_mod.run()
             except RemandError, e:
                 log.error(str(e))
             finally:

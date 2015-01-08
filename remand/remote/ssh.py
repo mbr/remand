@@ -4,10 +4,11 @@ from paramiko.ssh_exception import SSHException
 from remand import config, log
 from remand.exc import TransportError
 
-_KNOWN_HOSTS_ERROR = ("The host '{}' was not found in your known_hosts file. "
-"Remand is refusing to connect to unknown hosts.\n\n"
-"If you have an older version of Paramiko installed, this may be because of "
-"a key-type mismatch.\n\n")
+_KNOWN_HOSTS_ERROR = (
+    "The host '{}' was not found in your known_hosts file. "
+    "Remand is refusing to connect to unknown hosts.\n\n"
+    "If you have an older version of Paramiko installed, this may be because "
+    "of a key-type mismatch.\n\n")
 
 
 class SSHRemote(object):

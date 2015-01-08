@@ -39,12 +39,12 @@ def hosts(ctx, param, value):
 
 
 @click.command()
-@click.argument('script', type=click.Path(exists=True))
+@click.argument('module', type=click.Path(exists=True))
 @click.argument('hosts', default=None, metavar='[USER@]HOSTNAME[:PORT]',
                 callback=hosts, nargs=-1)
 @click.option('configfiles', '--config', '-c', envvar='REMAND_CONFIG',
               multiple=True, type=click.Path())
-def remand(script, hosts, configfiles):
+def remand(module, hosts, configfiles):
     # instantiate transport
 
     handler = ColorizedStderrHandler()
@@ -68,7 +68,7 @@ def remand(script, hosts, configfiles):
                 _context.top['config'] = cfg
                 _context.top['log'] = log
 
-                log.notice('Executing {} on {}'.format(script, host['uri']))
+                log.notice('Executing {} on {}'.format(module, host['uri']))
 
                 # instantiate remote
                 remote = SSHRemote(username=host['user'],

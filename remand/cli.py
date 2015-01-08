@@ -42,7 +42,9 @@ def hosts(ctx, param, value):
 @click.argument('script', type=click.Path(exists=True))
 @click.argument('hosts', default=None, metavar='[USER@]HOSTNAME[:PORT]',
                 callback=hosts, nargs=-1)
-def remand(script, hosts):
+@click.option('configfiles', '--config', '-c', envvar='REMAND_CONFIG',
+              multiple=True, type=click.Path())
+def remand(script, hosts, configfiles):
     # instantiate transport
 
     handler = ColorizedStderrHandler()
@@ -53,10 +55,13 @@ def remand(script, hosts):
             try:
                 # configuration read from defaults, then user config
                 cfg = configparser.ConfigParser()
-                cfg_files_read = cfg.read([
+                cfg_files = [
                     os.path.join(os.path.dirname(__file__), 'defaults.cfg'),
                     os.path.join(click.get_app_dir(APP_NAME), 'config.ini'),
-                ])
+                ]
+                cfg_files.extend(configfiles)
+                log.debug('Trying configuration files: {}'.format(cfg_files))
+                cfg_files_read = cfg.read(cfg_files)
                 log.debug('Read configuration from {}'.format(cfg_files_read))
 
                 # create thread-locals:

@@ -1,7 +1,7 @@
 from paramiko.client import SSHClient, AutoAddPolicy, RejectPolicy
 from paramiko.ssh_exception import SSHException
 
-from remand import config
+from remand import config, log
 from remand.exc import TransportError
 
 _KNOWN_HOSTS_ERROR = ("The host '{}' was not found in your known_hosts file. "
@@ -12,7 +12,6 @@ _KNOWN_HOSTS_ERROR = ("The host '{}' was not found in your known_hosts file. "
 
 class SSHRemote(object):
     def __init__(self, hostname, username, port):
-        # FIXME: audit this
         self._client = SSHClient()
 
         if config['ssh'].getboolean('load_known_hosts'):
@@ -29,3 +28,5 @@ class SSHRemote(object):
             if 'not found in known_hosts' in e.message:
                 raise TransportError(_KNOWN_HOSTS_ERROR.format(hostname))
             raise TransportError('SSH: {}'.format(e))
+
+        log.info('SSH connection complete')

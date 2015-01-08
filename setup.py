@@ -20,5 +20,10 @@ setup(
     url='http://github.com/mbr/remand',
     license='MIT',
     packages=find_packages(exclude=['tests']),
-    install_requires=['six', 'pluginbase'],
+    install_requires=['six', 'pluginbase', 'click>=2.0', 'logbook',
+                      'configparser>=3.5.0b2'],
+    entry_points="""
+        [console_scripts]
+        remand=remand.cli:remand
+    """
 )

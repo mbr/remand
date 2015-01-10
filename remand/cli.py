@@ -7,6 +7,7 @@ import click
 from click import BadParameter
 import logbook
 from logbook.more import ColorizedStderrHandler
+from stuf.collects import ChainMap
 
 from . import _context
 from .remotes.ssh import SSHRemote
@@ -58,6 +59,32 @@ def load_configuration(configfiles=[]):
     log.debug('Trying configuration files: {}'.format(fns))
     log.debug('Read configuration from {}'.format(cfg.read(fns)))
     return cfg
+
+
+class HostRegistry(object):
+    MATCH_PREFIX = 'Match:'
+    HOST_PREFIX = 'Host:'
+
+    def __init__(self, cfg):
+        self.host_res = []
+
+        for name, sect in cfg.items():
+            if name.startswith(self.HOST_PREFIX):
+                pattern = re.escape(name[len(self.HOST_PREFIX):])
+
+            elif name.startswith(self.MATCH_PREFIX):
+                pattern = name[len(self.MATCH_PREFIX):]
+                if 'match' in sect:
+                    pattern = sect['match']
+
+            else:
+                continue
+
+            self.host_res.append((re.compile(pattern), sect))
+
+    def get_config_for_host(self, hostname):
+        return ChainMap(*[sect for exp, sect in self.host_res
+                          if exp.match(hostname)])
 
 
 @click.command()

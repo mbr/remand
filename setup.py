@@ -13,7 +13,7 @@ def read(fname):
 setup(
     name='remand',
     version='0.1dev',
-    description='Infects your servers.',
+    description='Sane server provisioning.',
     long_description=read('README.rst'),
     author='Marc Brinkmann',
     author_email='git@marcbrinkmann.de',

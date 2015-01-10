@@ -56,3 +56,27 @@ file read later will supercede an earlier one.
 
        $ remand -c localconf.ini -c 2ndconf.ini mymod.py hosta hostb ...
 
+
+Security concerns
+-----------------
+
+.. highlight:: ini
+
+Using passwords for SSH connections is highly discouraged, using key-based
+access is preferable if possible. Still, sometimes default passwords are used
+on fresh installations and need to be used at least once to connect. Here is an
+example configuration::
+
+    [Host:media.example.com]
+    user=pi
+    password=raspberry
+
+.. highlight:: bash
+
+Since the password should only be valid once, there is a more convenient way::
+
+    $ remand mymod.py pi:raspberry@media.example.com
+
+This should **only** be used when dealing with widely known default passwords,
+as the credentials will afterwards be found in your memory, swap file,
+process list while remand is running and even shell history.

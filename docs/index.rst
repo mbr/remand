@@ -20,13 +20,8 @@ Named hosts and shortcuts
 Inside the configuration files (see :doc:`configuration` for details), it is
 possible to name specific hosts are configure them. Here is an example::
 
-    [Host:webserver]
-    hostname=10.0.1.23
-    login_user=web
-
-As a result, you can now address use the name ``webserver`` instead of a URI,
-which will connect using SSH (the default transport) to ``10.0.1.23`` and login
-as ``web``.
+    [Host:web.example.com]
+    user=web
 
 To make matters simpler, if you give a non-existant hostname, it will be
 expanded to ``ssh://...`` automatically. If ``web.example.com`` is not a host

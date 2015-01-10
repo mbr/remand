@@ -39,6 +39,27 @@ def hosts(ctx, param, value):
     return hs
 
 
+def load_configuration(configfiles=[]):
+    """Loads configuration information.
+
+    Will load ``defaults.cfg`` (shipped with remand), ``config.ini`` from the
+    application directory (similar to ``~/.config/remand/``) and any extra
+    configuration files passed.
+
+    :param configfiles: Additional configuration files to read.
+    """
+    fns = [
+        os.path.join(os.path.dirname(__file__), 'defaults.cfg'),
+        os.path.join(click.get_app_dir(APP_NAME), 'config.ini'),
+    ]
+    fns.extend(fns)
+
+    cfg = configparser.ConfigParser(allow_no_value=True)
+    log.debug('Trying configuration files: {}'.format(fns))
+    log.debug('Read configuration from {}'.format(cfg.read(fns)))
+    return cfg
+
+
 @click.command()
 @click.argument('module', type=click.Path(exists=True))
 @click.argument('hosts', default=None, metavar='[USER@]HOSTNAME[:PORT]',
@@ -56,19 +77,8 @@ def remand(module, hosts, configfiles):
         for host in hosts:
             _context.push({})
             try:
-                # configuration read from defaults, then user config
-                cfg = configparser.ConfigParser()
-                cfg_files = [
-                    os.path.join(os.path.dirname(__file__), 'defaults.cfg'),
-                    os.path.join(click.get_app_dir(APP_NAME), 'config.ini'),
-                ]
-                cfg_files.extend(configfiles)
-                log.debug('Trying configuration files: {}'.format(cfg_files))
-                cfg_files_read = cfg.read(cfg_files)
-                log.debug('Read configuration from {}'.format(cfg_files_read))
-
                 # create thread-locals:
-                _context.top['config'] = cfg
+                _context.top['config'] = load_configuration(configfiles)
                 _context.top['log'] = log
 
                 log.notice('Executing {} on {}'.format(module, host['uri']))

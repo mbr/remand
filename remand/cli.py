@@ -98,6 +98,11 @@ def remand(module, hosts, configfiles):
     handler = ColorizedStderrHandler()
 
     with handler.applicationbound():
+        # read configuration
+        global_cfg = load_configuration(configfiles)
+
+        # set up host-specific config
+        host_reg = HostRegistry(global_cfg)
 
         # instantiate the module
         active_mod = imp.load_source('_remand_active_mod', module)
@@ -106,7 +111,7 @@ def remand(module, hosts, configfiles):
             _context.push({})
             try:
                 # create thread-locals:
-                _context.top['config'] = load_configuration(configfiles)
+                _context.top['config'] = host_reg.get_config_for_host(host)
                 _context.top['log'] = log
 
                 log.notice('Executing {} on {}'.format(module, host['uri']))

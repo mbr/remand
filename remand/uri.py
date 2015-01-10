@@ -2,16 +2,18 @@ import re
 
 
 URI_RE = re.compile(r'(?:(?P<transport>[a-zA-Z][a-zA-Z0-9]*)://)?' +
+                    r'(?:(?P<user>[^@]*)@)?' +
                     r'(?P<host>[^/:]*)' + r'(?::(?P<port>[0-9]+))?' +
                     r'(?:(?P<path>/[^:]*))?' +
                     r'$')
 
 
 class Uri(object):
-    ATTRIBS = ('transport', 'host', 'port', 'path')
+    ATTRIBS = ('transport', 'user', 'host', 'port', 'path')
 
     def __init__(self):
         self.transport = None
+        self.user = None
         self.host = None
         self.port = None
         self.path = None
@@ -50,6 +52,10 @@ class Uri(object):
         if self.transport is not None:
             buf.append(self.transport)
             buf.append('://')
+
+        if self.user is not None:
+            buf.append(self.user)
+            buf.append('@')
 
         if self.host is not None:
             buf.append(self.host)

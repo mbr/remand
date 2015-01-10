@@ -53,7 +53,7 @@ def load_configuration(configfiles=[]):
         os.path.join(os.path.dirname(__file__), 'defaults.cfg'),
         os.path.join(click.get_app_dir(APP_NAME), 'config.ini'),
     ]
-    fns.extend(fns)
+    fns.extend(configfiles)
 
     cfg = configparser.ConfigParser(allow_no_value=True)
     log.debug('Trying configuration files: {}'.format(fns))

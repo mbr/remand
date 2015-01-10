@@ -25,6 +25,8 @@ def wrap_ssh_errors(f):
 
 
 class SSHRemote(Remote):
+    uri_prefix = 'ssh'
+
     __sftp = None
 
     def __init__(self, hostname, username, port):

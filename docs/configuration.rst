@@ -15,20 +15,7 @@ which uses the ini-syntax::
 
     # comments need to be on their own line and prefix with a hash
 
-    [Host:bert]
-    # this defines a host named bert, whose hostname is bert.example.com.
-    # when running remand from the commandline (remand mod.py bert), remand
-    # will use the ssh transport to connect to bert.example.com
-    #
-    # in general, it is preferable to use full hostnames, see below
-    hostname=bert.example.com
-    user=bert
-
     [Host:ernie.example.com]
-    # if no hostname value is given, the name part from the section header
-    # (everything that comes after "Host:") is used as the default value for
-    # hostname.
-    #
     # on the commandline,  remand mod.py ernie.example.com  will match this
     # host and cause it to connect to port 2222 instead of the default
     port=2222
@@ -41,11 +28,9 @@ which uses the ini-syntax::
     user=muppet
 
 Options are applied from top to bottom, with no regard given to whether or not
-the configuration section was a ``Host`` or ``Match`` one. For the example
-above, ``bert`` will have a ``user`` value of ``bert``, as no other section
-matches it. When requesting ``ernie.example.com``, the ``user`` value will be
-``muppet``, as the ``Match:.*\.example\.com`` section will overwrite the value
-set earlier.
+the configuration section was a ``Host`` or ``Match`` one. When requesting
+``ernie.example.com``, the ``user`` value will be ``muppet``, as the
+``Match:.*\.example\.com`` section will overwrite the value set earlier.
 
 
 Configuration paths

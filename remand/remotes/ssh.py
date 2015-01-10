@@ -11,7 +11,8 @@ _KNOWN_HOSTS_ERROR = (
     "The host '{}' was not found in your known_hosts file. "
     "Remand is refusing to connect to unknown hosts.\n\n"
     "If you have an older version of Paramiko installed, this may be because "
-    "of a key-type mismatch.\n\n")
+    "of a key-type mismatch.\n\n"
+    "See https://github.com/paramiko/paramiko/pull/473 for more information.")
 
 
 def wrap_ssh_errors(f):

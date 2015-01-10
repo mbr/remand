@@ -80,7 +80,7 @@ class HostRegistry(object):
             else:
                 continue
 
-            self.host_res.append((re.compile(pattern), sect))
+            self.host_res.append((re.compile(pattern + '$'), sect))
 
     def get_config_for_host(self, hostname):
         return ChainMap(*[sect for exp, sect in self.host_res

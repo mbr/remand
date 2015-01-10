@@ -25,5 +25,6 @@ setup(
     entry_points="""
         [console_scripts]
         remand=remand.cli:remand
+        rutil=remand.cli:rutil
     """
 )

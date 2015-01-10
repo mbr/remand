@@ -22,6 +22,7 @@ HOST_RE = re.compile('(?:(?P<user>[^:@]+)@)?'   # user@
                      '(?::(?P<port>[0-9]+))?$'  # :port
                      )
 APP_NAME = 'remand'
+CONFIG_INI_PATH = os.path.join(click.get_app_dir(APP_NAME), 'config.ini')
 
 
 def hosts(ctx, param, value):
@@ -51,7 +52,7 @@ def load_configuration(configfiles=[]):
     """
     fns = [
         os.path.join(os.path.dirname(__file__), 'defaults.cfg'),
-        os.path.join(click.get_app_dir(APP_NAME), 'config.ini'),
+        CONFIG_INI_PATH,
     ]
     fns.extend(configfiles)
 
@@ -122,3 +123,13 @@ def remand(module, hosts, configfiles):
                 log.error(str(e))
             finally:
                 _context.pop()
+
+
+@click.group()
+def rutil():
+    pass
+
+
+@rutil.command()
+def config_path():
+    click.echo(CONFIG_INI_PATH)

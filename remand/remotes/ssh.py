@@ -276,8 +276,14 @@ class SSHRemote(Remote):
 
     @wrap_sftp_errors
     def popen(self, args, bufsize=0, extra_env=None):
+        if extra_env is not None:
+            raise NotImplementedError(
+                'extra_env not supported on SSH at this time'
+            )
+
         # get timeout from configuration
         timeout = config['ssh_command_timeout']
+
         if timeout:
             timeout = int(timeout)
         cmd = ' '.join(shlex_quote(part) for part in args)

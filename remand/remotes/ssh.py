@@ -1,7 +1,9 @@
 from binascii import hexlify
 from functools import wraps
 
-from paramiko.client import SSHClient, AutoAddPolicy, RejectPolicy
+import click
+from paramiko.client import (SSHClient, AutoAddPolicy, RejectPolicy,
+                             MissingHostKeyPolicy)
 from paramiko.ssh_exception import SSHException, BadHostKeyException
 
 from . import Remote
@@ -24,6 +26,33 @@ _BAD_KEY_ERROR = (
     "known_hosts key: {} {}\n\n"
     "The host key for '{}' has changed and checking is enabled."
 )
+
+_UNKNOWN_HOST_QUESTION = (
+    "The authenticity of host '{}' can't be established.\n"
+    "{} key fingerprint is {}.")
+
+
+_UNKNOWN_HOST_PROMPT = (
+    "Are you sure you want to continue connecting?"
+)
+
+
+class WarnAutoAddPolicy(AutoAddPolicy):
+    def missing_host_key(self, client, hostname, key):
+        log.warning('Missing hostkey for {} ignored (fingerprint is {}).'
+                    .format(hostname, format_key(key)))
+        return super(WarnAutoAddPolicy, self).missing_host_key(
+            client, hostname, key
+        )
+
+
+class AskToAddPolicy(MissingHostKeyPolicy):
+    def missing_host_key(self, client, hostname, key):
+        click.echo(_UNKNOWN_HOST_QUESTION.format(
+            hostname, key.get_name(), format_key(key),
+        ))
+        if not click.confirm(_UNKNOWN_HOST_PROMPT):
+            raise TransportError('User declined to connect to unknown host')
 
 
 def format_key(key):
@@ -60,10 +89,15 @@ class SSHRemote(Remote):
         if config.get_bool('load_known_hosts', True):
             self._client.load_system_host_keys()
 
-        rej_policy = (AutoAddPolicy()
-                      if config.get_bool('disable_host_key_checking', False)
-                      else RejectPolicy())
-        self._client.set_missing_host_key_policy(rej_policy)
+        on_missing_host_key = config['on_missing_host_key']
+        policy = RejectPolicy()
+        if on_missing_host_key == 'ignore':
+            policy = WarnAutoAddPolicy()
+        elif on_missing_host_key == 'ask':
+            policy = AskToAddPolicy()
+
+        log.debug('Missing host key policy: {}'.format(type(policy).__name__))
+        self._client.set_missing_host_key_policy(policy)
 
         uri = config['uri']
         try:

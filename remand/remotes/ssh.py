@@ -1,5 +1,6 @@
 from binascii import hexlify
 from functools import wraps
+import os
 
 import click
 from paramiko.client import (SSHClient, AutoAddPolicy, RejectPolicy,
@@ -27,15 +28,6 @@ _BAD_KEY_ERROR = (
     "The host key for '{}' has changed and checking is enabled."
 )
 
-_UNKNOWN_HOST_QUESTION = (
-    "The authenticity of host '{}' can't be established.\n"
-    "{} key fingerprint is {}.")
-
-
-_UNKNOWN_HOST_PROMPT = (
-    "Are you sure you want to continue connecting?"
-)
-
 
 class WarnAutoAddPolicy(AutoAddPolicy):
     def missing_host_key(self, client, hostname, key):
@@ -47,12 +39,38 @@ class WarnAutoAddPolicy(AutoAddPolicy):
 
 
 class AskToAddPolicy(MissingHostKeyPolicy):
+    _UNKNOWN_WARNING = (
+        "The authenticity of host '{}' can't be established.\n"
+        "{} key fingerprint is {}."
+    )
+    _USER_PROMPT = "Are you sure you want to continue connecting?"
+
     def missing_host_key(self, client, hostname, key):
-        click.echo(_UNKNOWN_HOST_QUESTION.format(
+        click.echo(self._UNKNOWN_WARNING.format(
             hostname, key.get_name(), format_key(key),
         ))
-        if not click.confirm(_UNKNOWN_HOST_PROMPT):
+        if not click.confirm(self._USER_PROMPT):
             raise TransportError('User declined to connect to unknown host')
+
+
+class AskToSavePolicy(AskToAddPolicy):
+    _USER_PROMPT = (
+        "Are you sure you want to save to known_hosts and continue?"
+    )
+
+    def missing_host_key(self, client, hostname, key):
+        super(AskToSavePolicy, self).missing_host_key(client, hostname, key)
+
+        # add, this does not save it though
+        client._host_keys.add(hostname, key.get_name(), key)
+
+        if client._host_keys_filename is not None:
+            client.save_host_keys(client._host_keys_filename)
+            log.info('Added {} host key for {}: {}'.format(
+                key.get_name(), hostname, format_key(key)
+            ))
+        else:
+            log.warning('Did not save host, no known_hosts file loaded.')
 
 
 def format_key(key):
@@ -86,8 +104,17 @@ class SSHRemote(Remote):
     def __init__(self):
         self._client = SSHClient()
 
-        if config.get_bool('load_known_hosts', True):
-            self._client.load_system_host_keys()
+        # load known_hosts
+        for kh_path in config['load_known_hosts'].split(os.pathsep):
+            path = os.path.expanduser(kh_path)
+            if not path:
+                continue
+            if not os.path.exists(path):
+                log.warning('Skipping non-existant known_hosts file: {}'
+                            .format(path))
+                continue
+            log.debug('Loading SSH known hosts from {}'.format(path))
+            self._client.load_host_keys(path)
 
         on_missing_host_key = config['on_missing_host_key']
         policy = RejectPolicy()
@@ -95,6 +122,8 @@ class SSHRemote(Remote):
             policy = WarnAutoAddPolicy()
         elif on_missing_host_key == 'ask':
             policy = AskToAddPolicy()
+        elif on_missing_host_key == 'ask_to_save':
+            policy = AskToSavePolicy()
 
         log.debug('Missing host key policy: {}'.format(type(policy).__name__))
         self._client.set_missing_host_key_policy(policy)

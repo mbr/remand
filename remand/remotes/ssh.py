@@ -22,7 +22,7 @@ _BAD_KEY_ERROR = (
     "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!\n\n"
     "Remote host key: {} {}\n"
     "known_hosts key: {} {}\n\n"
-    "The host key for {} has changed and checking is enabled."
+    "The host key for '{}' has changed and checking is enabled."
 )
 
 
@@ -78,7 +78,9 @@ class SSHRemote(Remote):
             ))
         except SSHException, e:
             if 'not found in known_hosts' in e.message:
-                raise TransportError(_KNOWN_HOSTS_ERROR.format(uri.host))
+                raise TransportError(_KNOWN_HOSTS_ERROR.format(
+                    ssh_host_name(uri))
+                )
             raise
 
         log.info('SSH connection complete')

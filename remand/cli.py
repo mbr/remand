@@ -7,12 +7,12 @@ import click
 from click import BadParameter
 import logbook
 from logbook.more import ColorizedStderrHandler
-from stuf.collects import ChainMap
 
 from . import _context
-from .uri import Uri
-from .remotes.ssh import SSHRemote
 from .exc import RemandError, TransportError
+from .remotes.ssh import SSHRemote
+from .uri import Uri
+from .utils import TypeConversionChainMap
 
 # medium-term, this could become a plugin-based solution, if there's need
 all_transports = {
@@ -81,8 +81,8 @@ class HostRegistry(object):
             self.host_res.append((re.compile(pattern + '$'), sect))
 
     def get_config_for_host(self, hostname):
-        return ChainMap(*[sect for exp, sect in self.host_res
-                          if exp.match(hostname)])
+        return TypeConversionChainMap(*[sect for exp, sect in self.host_res
+                                      if exp.match(hostname)])
 
 
 @click.command()
@@ -122,7 +122,8 @@ def remand(module, uris, configfiles):
                 _context.top['config'] = cfg
                 _context.top['log'] = log
 
-                if not cfg['uri'].transport in all_transports:
+                transport_cls = all_transports.get(cfg['uri'].transport, None)
+                if not transport_cls:
                     raise TransportError('Unknown transport: {}'.format(
                         cfg['uri'])
                     )
@@ -130,8 +131,8 @@ def remand(module, uris, configfiles):
                 log.notice('Executing {} on {}'.format(module, cfg['uri']))
 
                 # instantiate remote
-                #remote = all_transports[remote_type(address)
-                _context.top['remote'] = remote
+                transport = transport_cls()
+                _context.top['remote'] = transport
 
                 log.debug('Running {}'.format(active_mod.__file__))
                 active_mod.run()

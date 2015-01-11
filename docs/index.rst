@@ -57,5 +57,5 @@ Table of contents
    Core concepts <self>
    modules
    configuration
-   errors
+   misc
    low-level-api

@@ -9,3 +9,7 @@ class TransportError(RemandError):
 class RemoteFailureError(RemandError):
     """Indicates an operation on the server failed, which probably can't be
     recovered."""
+
+
+class ConfigurationError(RemandError):
+    """A requested operation is not possible, no recovery."""

@@ -9,7 +9,7 @@ from paramiko.client import (SSHClient, AutoAddPolicy, RejectPolicy,
 from paramiko.ssh_exception import SSHException, BadHostKeyException
 from six.moves import shlex_quote
 
-from . import Remote, RemoteProcess
+from . import Remote, RemoteProcess, _validate_umask
 from .. import config, log
 from ..exc import TransportError, RemoteFailureError
 
@@ -231,6 +231,14 @@ class SSHRemote(Remote):
             raise
 
         log.info('SSH connection established')
+        log.debug('Verifying umask')
+        um, _ = self.popen(['sh', '-c', 'umask']).communicate()
+        umask = int(um.strip(), 8)
+        expected_umask = int(config['reset_umask'], 8)
+        if not umask == int(config['reset_umask'], 8):
+            log.warning('Host has unexpected umask of {:03o} (instead of '
+                        '{:03o}). Things might not work as you expect.'
+                        .format(umask, expected_umask))
 
     @property
     def _sftp(self):
@@ -259,7 +267,7 @@ class SSHRemote(Remote):
         return self._sftp.lstat(path)
 
     @wrap_sftp_errors
-    def mkdir(self, path, mode=None):
+    def mkdir(self, path, mode=0777):
         return self._sftp.mkdir(path, mode)
 
     @wrap_sftp_errors
@@ -306,6 +314,12 @@ class SSHRemote(Remote):
     @wrap_sftp_errors
     def symlink(self, target, path):
         return self._sftp.symlink(target, path)
+
+    @wrap_sftp_errors
+    def umask(self, umask):
+        _validate_umask(umask)
+        raise NotImplementedError('Currently, the SSH transport does not '
+                                  'support setting the umask')
 
     @wrap_sftp_errors
     def unlink(self, path):

@@ -3,6 +3,8 @@ import shlex
 
 from six.moves import shlex_quote
 
+from ..exc import ConfigurationError
+
 
 def quote_args(args):
     return ' '.join(shlex_quote(arg) for arg in args)
@@ -28,6 +30,13 @@ class Project(object):
 
     def get_resource(self, parts):
         return os.path.join(self.basedir, *parts)
+
+
+def _validate_umask(umask):
+    if not isinstance(umask, int):
+        raise ConfigurationError('Not an integer umask: {}'.format(umask))
+    if umask > 0777:
+        raise ConfigurationError('Invalid umask value: {}'.format(umask))
 
 
 class RemoteProcess(object):
@@ -223,6 +232,15 @@ class Remote(object):
         :param target: Where the link will point.
         :param path: Path for the link.
         """
+        raise NotImplementedError
+
+    def umask(self, umask):
+        """Set the current umask and return the previous one.
+
+        :param umask: New umask as an integer.
+        :return: Previous umask.
+        """
+        raise NotImplementedError
 
     def unlink(self, path):
         """Remove a file.

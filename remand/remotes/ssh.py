@@ -1,13 +1,15 @@
 from binascii import hexlify
 from functools import wraps
+from threading import Thread
 import os
 
 import click
 from paramiko.client import (SSHClient, AutoAddPolicy, RejectPolicy,
                              MissingHostKeyPolicy)
 from paramiko.ssh_exception import SSHException, BadHostKeyException
+from six.moves import shlex_quote
 
-from . import Remote
+from . import Remote, RemoteProcess
 from .. import config, log
 from ..exc import TransportError, RemoteFailureError
 
@@ -109,6 +111,73 @@ def wrap_sftp_errors(f):
     return wrap_ssh_errors(_)
 
 
+class SSHRemoteProcess(RemoteProcess):
+    def __init__(self, stdin, stdout, stderr):
+        self.stdin = stdin
+        self.stdout = stdout
+        self.stderr = stderr
+
+    @property
+    def _channel(self):
+        return self.stdin.channel
+
+    def poll(self):
+        if self._channel.exit_status_ready():
+            # ensure that a finished process always has an exit status
+            self.returncode = self._channel.recv_exit_status()
+            return True
+
+    def wait(self):
+        self.returncode = self._channel.recv_exit_status()
+
+    def communicate(self, input=None):
+        def read_thread(src, buffer):
+            buffer.append(src.read())
+
+        stdout = []
+        stderr = []
+
+        stdout_thread = Thread(target=read_thread, args=(self.stdout, stdout))
+        stderr_thread = Thread(target=read_thread, args=(self.stderr, stderr))
+
+        stdout_thread.setDaemon(True)
+        stderr_thread.setDaemon(True)
+
+        stdout_thread.start()
+        stderr_thread.start()
+
+        log.debug('Started stdout/stderr threads')
+
+        if input is not None:
+            self.stdin.write(input)
+            log.debug('Input sent')
+        self.stdin.close()
+
+        # wait for stdout/stderr to finish
+        stdout_thread.join()
+        stderr_thread.join()
+
+        log.debug('Stdout/stderr joined')
+        self.stdout.close()
+        self.stderr.close()
+
+        self.wait()
+        return (stdout[0], stderr[0])
+
+
+class _ShutdownWrap(object):
+    def __init__(self, channelfile, shutdown_how):
+        self._channelfile = channelfile
+        self._shutdown_how = shutdown_how
+
+    def close(self):
+        self._channelfile.close()
+        self._channelfile.channel.shutdown(self._shutdown_how)
+
+    def __getattr__(self, key):
+        return getattr(self._channelfile, key)
+
+
 class SSHRemote(Remote):
     uri_prefix = 'ssh'
 
@@ -204,6 +273,21 @@ class SSHRemote(Remote):
     @wrap_sftp_errors
     def rename(self, oldpath, newpath):
         return self._sftp.rename(oldpath, newpath)
+
+    @wrap_sftp_errors
+    def popen(self, args, bufsize=0, extra_env=None):
+        # get timeout from configuration
+        timeout = config['ssh_command_timeout']
+        if timeout:
+            timeout = int(timeout)
+        cmd = ' '.join(shlex_quote(part) for part in args)
+        stdin, stdout, stderr = self._client.exec_command(cmd, timeout=timeout)
+
+        return SSHRemoteProcess(
+            stdin=_ShutdownWrap(stdin, 1),
+            stdout=_ShutdownWrap(stdout, 0),
+            stderr=_ShutdownWrap(stderr, 0),
+        )
 
     @wrap_sftp_errors
     def rmdir(self, path):

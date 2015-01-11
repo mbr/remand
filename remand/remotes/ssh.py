@@ -306,5 +306,5 @@ class SSHRemote(Remote):
         return self._sftp.unlink(path)
 
     @wrap_sftp_errors
-    def file(self, name, mode='r', buffering=-1):
-        return self._sftp.file(name, mode, buffering)
+    def file(self, name, mode='r', bufsize=-1):
+        return self._sftp.file(name, mode, bufsize)

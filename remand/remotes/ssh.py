@@ -130,7 +130,8 @@ class SSHRemote(Remote):
 
         uri = config['uri']
         try:
-            self._client.connect(uri.host, uri.port or 22, uri.user)
+            self._client.connect(uri.host, uri.port or 22, uri.user,
+                                 password=uri.password)
         except BadHostKeyException, e:
             raise TransportError(_BAD_KEY_ERROR.format(
                 e.key.get_name(),

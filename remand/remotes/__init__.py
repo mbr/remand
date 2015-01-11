@@ -87,6 +87,13 @@ class RemoteProcess(object):
 
 
 class Remote(object):
+    """Interface for transports to remote server.
+
+    All instance-methods will throw :class:`~remand.exc.RemoteFailureError` if
+    the operation is not successful (in addition to the usual
+    :class:`~remand.exc.TransportError`).
+    """
+
     def getcwd(self):
         """Returns the current working directory.
 

@@ -87,9 +87,6 @@ class RemoteProcess(object):
 
 
 class Remote(object):
-    def run(self, cmd):
-        raise NotImplementedError
-
     def getcwd(self):
         return self.normalize('.')
 

@@ -259,7 +259,7 @@ class SSHRemote(Remote):
         return self._sftp.lstat(path)
 
     @wrap_sftp_errors
-    def mkdir(self, path, mode):
+    def mkdir(self, path, mode=None):
         return self._sftp.mkdir(path, mode)
 
     @wrap_sftp_errors
@@ -304,8 +304,8 @@ class SSHRemote(Remote):
         return self._sftp.stat(path)
 
     @wrap_sftp_errors
-    def symlink(self, source, dest):
-        return self._sftp.symlink(source, dest)
+    def symlink(self, target, path):
+        return self._sftp.symlink(target, path)
 
     @wrap_sftp_errors
     def unlink(self, path):

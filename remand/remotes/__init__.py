@@ -88,27 +88,66 @@ class RemoteProcess(object):
 
 class Remote(object):
     def getcwd(self):
+        """Returns the current working directory.
+
+        :return: The current working directory as a string."""
         return self.normalize('.')
 
     def chdir(self, path):
+        """Change the current working directory to ``path``.
+
+        :param path: The new working directory as a string.
+        """
         raise NotImplementedError
 
     def chmod(self, path, mode):
+        """Change ownership of path.
+
+        :param path: Path to change ownership of.
+        :param mode: New mode (as an integer, e.g. ``0755``).
+        """
         raise NotImplementedError
 
-    def chown(self, uid=-1, gid=-1):
+    def chown(self, path, uid=-1, gid=-1):
+        """Change ownership of a file.
+
+        :param path: Path to change ownership of.
+        :param uid: User id to change to (numeric).
+        :param gid: Group id to change to (numeric).
+        """
         raise NotImplementedError
 
     def listdir(self, path):
+        """List directory contents.
+
+        :param path: Directory to list.
+        :return: List of strings containing all directory entries.
+        """
         raise NotImplementedError
 
     def lstat(self, path):
+        """Stat without following symbolic links.
+
+        See :func:`~remand.remotes.Remand.stat`.
+        """
         raise NotImplementedError
 
-    def mkdir(self, path, mode):
+    def mkdir(self, path, mode=None):
+        """Create directory.
+
+        :param path: Path to create.
+        :param mode: The final mode for the new directory. umask will be
+        applied, see :ref:`umask`.
+        """
         raise NotImplementedError
 
     def normalize(self, path):
+        """Normalize a path.
+
+        :param path: Path to normalize.
+        :return: Resulting path, with all links followed and relative dirs
+                 resolved.
+        """
         raise NotImplementedError
 
     def popen(self, args, bufsize=0, extra_env=None):
@@ -123,22 +162,64 @@ class Remote(object):
         raise NotImplementedError
 
     def file(self, name, mode='r', bufsize=-1):
+        """Open a file on the remote side.
+
+        This function mimicks the Python :func:`file` interface, except that
+        the parameter ``buffering`` is called ``bufsize`` instead.
+
+        When dealing with remote files, :ref:`umask` should be taken into
+        account.
+
+        :return: A file-like object
+        """
         raise NotImplementedError
 
     def readlink(self, path):
+        """Read a symbolic link.
+
+        :param path: Link to read.
+        :return: A string with the link's target.
+        """
         raise NotImplementedError
 
     def rename(self, oldpath, newpath):
+        """Rename a file.
+
+        Existing paths will be silently overwritten.
+
+        :param oldpath: Path to be renamed.
+        :param newpath: New name for the path.
+        """
         raise NotImplementedError
 
     def rmdir(self, path):
+        """Remove a directory.
+
+        :param path: Directory to remove.
+        """
         raise NotImplementedError
 
     def stat(self, path):
+        """Stat a file.
+
+        :param path: Path to stat
+        :return: A stat result that supports attribute access to the following
+                 fields: ``st_size``, ``st_uid``, ``st_gid``, ``st_mode``,
+                 ``st_atime``, ``st_mtime`` with the same meanings as those
+                 of :func:`os.stat`.
+        """
         raise NotImplementedError
 
-    def symlink(self, path):
-        raise NotImplementedError
+    def symlink(self, target, path):
+        """Create a symbolic link.
+
+        :param target: Where the link will point.
+        :param path: Path for the link.
+        """
 
     def unlink(self, path):
+        """Remove a file.
+
+        :param path: File to remove.
+        """
         raise NotImplementedError

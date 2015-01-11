@@ -9,7 +9,7 @@ from paramiko.ssh_exception import SSHException, BadHostKeyException
 
 from . import Remote
 from .. import config, log
-from ..exc import TransportError
+from ..exc import TransportError, RemoteFailureError
 
 _KNOWN_HOSTS_ERROR = (
     "The host '{}' was not found in your known_hosts file. "
@@ -95,6 +95,20 @@ def wrap_ssh_errors(f):
     return _
 
 
+def wrap_sftp_errors(f):
+    @wraps(f)
+    def _(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except IOError, e:
+            fargs = ', '.join(
+                list(args[1:]) + ['{}={}'.format(*v) for v in kwargs]
+            )
+            raise RemoteFailureError('SFTP Failed {}({}): {}'.format(
+                f.__name__, fargs, str(e)))
+    return wrap_ssh_errors(_)
+
+
 class SSHRemote(Remote):
     uri_prefix = 'ssh'
 
@@ -155,6 +169,58 @@ class SSHRemote(Remote):
             self.__sftp = self._client.open_sftp()
         return self.__sftp
 
-    @wrap_ssh_errors
+    @wrap_sftp_errors
+    def chdir(self, path):
+        return self._sftp.chdir(path)
+
+    @wrap_sftp_errors
+    def chmod(self, path, mode):
+        return self._sftp.chmod(path, mode)
+
+    @wrap_sftp_errors
     def getcwd(self):
         return self._sftp.normalize('.')
+
+    @wrap_sftp_errors
+    def listdir(self, path):
+        return self._sftp.listdir(path)
+
+    @wrap_sftp_errors
+    def lstat(self, path):
+        return self._sftp.lstat(path)
+
+    @wrap_sftp_errors
+    def mkdir(self, path, mode):
+        return self._sftp.mkdir(path, mode)
+
+    @wrap_sftp_errors
+    def normalize(self, path):
+        return self._sftp.normalize(path)
+
+    @wrap_sftp_errors
+    def readlink(self, path):
+        return self._sftp.readlink(path)
+
+    @wrap_sftp_errors
+    def rename(self, oldpath, newpath):
+        return self._sftp.rename(oldpath, newpath)
+
+    @wrap_sftp_errors
+    def rmdir(self, path):
+        return self._sftp.rmdir(path)
+
+    @wrap_sftp_errors
+    def stat(self, path):
+        return self._sftp.stat(path)
+
+    @wrap_sftp_errors
+    def symlink(self, source, dest):
+        return self._sftp.symlink(source, dest)
+
+    @wrap_sftp_errors
+    def unlink(self, path):
+        return self._sftp.unlink(path)
+
+    @wrap_sftp_errors
+    def file(self, name, mode='r', buffering=-1):
+        return self._sftp.file(name, mode, buffering)

@@ -49,10 +49,10 @@ class Remote(object):
     def listdir(self, path):
         raise NotImplementedError
 
-    def mkdir(self, path, mode):
+    def lstat(self, path):
         raise NotImplementedError
 
-    def makedirs(self, path, mode):
+    def mkdir(self, path, mode):
         raise NotImplementedError
 
     def normalize(self, path):
@@ -64,7 +64,7 @@ class Remote(object):
     def readlink(self, path):
         raise NotImplementedError
 
-    def rename(self, path):
+    def rename(self, oldpath, newpath):
         raise NotImplementedError
 
     def rmdir(self, path):
@@ -77,10 +77,4 @@ class Remote(object):
         raise NotImplementedError
 
     def unlink(self, path):
-        raise NotImplementedError
-
-    def get(self, remote_path, local_path):
-        raise NotImplementedError
-
-    def put(self, remote_path, local_path):
         raise NotImplementedError

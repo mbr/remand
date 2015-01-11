@@ -147,7 +147,7 @@ class SSHRemote(Remote):
                 )
             raise
 
-        log.info('SSH connection complete')
+        log.info('SSH connection established')
 
     @property
     def _sftp(self):

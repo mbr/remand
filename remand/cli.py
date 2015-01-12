@@ -121,6 +121,7 @@ def remand(module, uris, configfiles):
                 # create thread-locals:
                 _context.top['config'] = cfg
                 _context.top['log'] = log
+                _context.top['state'] = {}
 
                 transport_cls = all_transports.get(cfg['uri'].transport, None)
                 if not transport_cls:

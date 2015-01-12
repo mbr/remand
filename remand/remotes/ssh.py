@@ -6,6 +6,7 @@ import os
 import click
 from paramiko.client import (SSHClient, AutoAddPolicy, RejectPolicy,
                              MissingHostKeyPolicy)
+from paramiko.sftp_client import SFTPClient
 from paramiko.ssh_exception import SSHException, BadHostKeyException
 from six.moves import shlex_quote
 
@@ -178,7 +179,7 @@ class _ShutdownWrap(object):
 class SSHRemote(Remote):
     uri_prefix = 'ssh'
 
-    __sftp = None
+    _sftp_instance = None
 
     @wrap_ssh_errors
     def __init__(self):
@@ -239,9 +240,31 @@ class SSHRemote(Remote):
 
     @property
     def _sftp(self):
-        if not self.__sftp:
-            self.__sftp = self._client.open_sftp()
-        return self.__sftp
+        if self._sftp_instance:
+            # check if the command changed
+            if config['sftp_command'] != self._sftp_invocation:
+                self._sftp_instance.close()
+
+                self._sftp_invocation = None
+                self._sftp_instance = None
+                log.debug('SFTP command changed, reinitializing SFTP')
+
+        if not self._sftp_instance:
+            t = self._client._transport
+            chan = t.open_session()
+            if chan is None:
+                raise TransportError('Could not open channel for SFTP')
+
+            if config['sftp_command'] is None:
+                log.debug('SFTP using Subsystem sftp')
+                chan.invoke_subsystem('sftp')
+            else:
+                log.debug('SFTP using {}'.format(config['sftp_command']))
+                chan.exec_command(config['sftp_command'])
+            self._sftp_invocation = config['sftp_command']
+            self._sftp_instance = SFTPClient(chan)
+
+        return self._sftp_instance
 
     @wrap_sftp_errors
     def chdir(self, path):

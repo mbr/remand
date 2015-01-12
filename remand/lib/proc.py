@@ -1,14 +1,10 @@
 from contextlib import contextmanager
 import shlex
+from six.moves import shlex_quote
 
-from remand import remote, log, state
+from remand import remote, log, config
 from remand.exc import RemoteFailureError
-
-
-def _popen(*args, **kwargs):
-    if state['sudo']:
-        return state['sudo'][-1].popen(*args, **kwargs)
-    return remote.popen(*args, **kwargs)
+from remand.remotes.ssh import SSHRemote
 
 
 def _cmd_to_args(cmd):
@@ -22,7 +18,7 @@ def run(cmd, input=None, extra_env={}):
     args = _cmd_to_args(cmd)
     log.debug('run: {}'.format(args))
 
-    proc = _popen(args, extra_env=extra_env)
+    proc = remote.popen(args, extra_env=extra_env)
     stdout, stderr = proc.communicate(input)
 
     if not proc.returncode == 0:
@@ -33,41 +29,36 @@ def run(cmd, input=None, extra_env={}):
     return stdout, stderr
 
 
-class _SudoContext(object):
-    def __init__(self, user, password):
-        self.user = user
-        self.password = password
+@contextmanager
+def sudo(user=None, password=None):
+    if not isinstance(remote._get_current_object(), SSHRemote):
+        raise NotImplementedError('sudo is only supported for SSH remotes.')
 
-        if self.password:
-            raise NotImplementedError('At this time, sudo with password is '
-                                      'not implemented.')
+    sudo_args = ['sudo', '-E', '-H']
 
-    def popen(self, args, bufsize=0, extra_env={}):
+    if user:
+        sudo_args.append('-u', user)
+    if password:
+        raise NotImplementedError('Currently, sudo with password is not '
+                                  'supported.')
+
+    def sudo_popen(args, bufsize=0, extra_env={}):
         # -E preserve environment variables passed
         # -H set the $HOME environment variable (usually default)
         # -S (unused): read password from stdin
-        sudo_args = ['sudo', '-E', '-H']
 
-        if self.user:
-            sudo_args.append('-u', self.user)
         sudo_args.extend(args)
+        return orig_popen(sudo_args, bufsize, extra_env)
 
-        return remote.popen(sudo_args, bufsize, extra_env)
+    # monkey patch remote.sudo
+    orig_popen = remote.popen
+    remote.popen = sudo_popen
 
-    def __repr__(self):
-        return 'sudo({}, {})'.format(
-            self.user, '***' if self.password is not None else None)
+    sftp_cmd = ' '.join([shlex_quote(part) for part in sudo_args]
+                        + [config['sftp_location']])
 
-
-@contextmanager
-def sudo(user=None, password=None):
-    if not hasattr(state, 'sudo'):
-        state['sudo'] = []
-
-    state['sudo'].append(_SudoContext(user, password))
-    log.debug('Sudo stack grown to {}'.format(state['sudo']))
+    # override sftp subsystem
+    config['sftp_command'] = sftp_cmd
 
     yield
-
-    state['sudo'].pop()
-    log.debug('Sudo stack pop(): {}'.format(state['sudo']))
+    remote.popen = orig_popen

@@ -283,18 +283,16 @@ class SSHRemote(Remote):
         return self._sftp.rename(oldpath, newpath)
 
     @wrap_sftp_errors
-    def popen(self, args, bufsize=0, extra_env=None):
-        if extra_env is not None:
-            raise NotImplementedError(
-                'extra_env not supported on SSH at this time'
-            )
+    def popen(self, args, bufsize=0, extra_env={}):
+        envvars = ['{}={}'.format(shlex_quote(k), shlex_quote(v))
+                   for k, v in extra_env.items()]
 
         # get timeout from configuration
         timeout = config['ssh_command_timeout']
 
         if timeout:
             timeout = int(timeout)
-        cmd = ' '.join(shlex_quote(part) for part in args)
+        cmd = ' '.join(envvars + [shlex_quote(part) for part in args])
         stdin, stdout, stderr = self._client.exec_command(cmd, timeout=timeout)
 
         return SSHRemoteProcess(

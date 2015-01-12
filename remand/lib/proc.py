@@ -11,11 +11,11 @@ def _cmd_to_args(cmd):
     return shlex.split(cmd)
 
 
-def run(cmd, input=None):
+def run(cmd, input=None, extra_env={}):
     args = _cmd_to_args(cmd)
     log.debug('run: {}'.format(args))
 
-    proc = remote.popen(args)
+    proc = remote.popen(args, extra_env=extra_env)
     stdout, stderr = proc.communicate(input)
 
     if not proc.returncode == 0:

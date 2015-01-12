@@ -166,7 +166,7 @@ class Remote(object):
         """
         raise NotImplementedError
 
-    def popen(self, args, bufsize=0, extra_env=None):
+    def popen(self, args, bufsize=0, extra_env={}):
         """Open a process on the remote side.
 
         :param args: The command's args (including argv0)

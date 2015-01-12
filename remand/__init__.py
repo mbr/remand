@@ -12,7 +12,8 @@ from werkzeug.local import LocalStack, LocalProxy
 def _lookup_context(name):
     top = _context.top
     if top is None:
-        raise RuntimeError('No current context')
+        raise RuntimeError('No current context. Did you forget to put your '
+                           'module code inside a run() method?')
     return top[name]
 
 

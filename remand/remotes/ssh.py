@@ -146,8 +146,6 @@ class SSHRemoteProcess(RemoteProcess):
         stdout_thread.start()
         stderr_thread.start()
 
-        log.debug('Started stdout/stderr threads')
-
         if input is not None:
             self.stdin.write(input)
             log.debug('Input sent')
@@ -157,7 +155,6 @@ class SSHRemoteProcess(RemoteProcess):
         stdout_thread.join()
         stderr_thread.join()
 
-        log.debug('Stdout/stderr joined')
         self.stdout.close()
         self.stderr.close()
 
@@ -293,6 +290,7 @@ class SSHRemote(Remote):
         if timeout:
             timeout = int(timeout)
         cmd = ' '.join(envvars + [shlex_quote(part) for part in args])
+        log.debug('Executing {}'.format(cmd))
         stdin, stdout, stderr = self._client.exec_command(cmd, timeout=timeout)
 
         return SSHRemoteProcess(

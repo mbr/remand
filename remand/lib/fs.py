@@ -89,8 +89,12 @@ def _verify_sha(st, local_path, remote_path):
 
 def _verify_stat(st, local_path, remote_path):
     lst = os.stat(local_path)
-    l = (lst.st_mtime, lst.st_size)
-    r = (st.st_mtime, st.st_size)
+
+    mul = int(config['fs_mtime_multiplier'])
+
+    # we cast to int, to avoid into issues with different mtime resolutions
+    l = (int(lst.st_mtime * mul), lst.st_size)
+    r = (int(st.st_mtime * mul), st.st_size)
     log.debug('stat (mtime/size): local {}/{}, remote {}/{}'.format(*(l + r)))
     return l == r
 
@@ -160,6 +164,11 @@ def upload_file(local_path, remote_path=None):
 
     if not st or not verifier(st, local_path, remote_path):
         uploader(local_path, remote_path)
+        if config.get_bool('fs_update_mtime'):
+            lst = os.stat(local_path)
+            times = (lst.st_mtime, lst.st_mtime)
+            remote.utime(remote_path, times)
+            log.debug('Updated atime/mtime: {}'.format(times))
         changed('Upload {} -> {}'.format(local_path, remote_path))
     else:
         unchanged('File up-to-date: {}'.format(remote_path))

@@ -76,6 +76,29 @@ class _FileUploader(object):
             copyfileobj(src, dst)
 
 
+class _ReadFileUploader(_FileUploader):
+    def _needs_update(self, local_path, remote_path):
+        with remote.file(remote_path, 'rb') as rf,\
+                file(local_path, 'rb') as lf:
+
+            # enable prefetching if files support it
+            # otherwise, performance is horrible (like disabled pipelining)
+            if hasattr(rf, 'prefetch'):
+                rf.prefetch()
+
+            bufsize = int(config['buffer_size'])
+            while True:
+                rbuf = rf.read(bufsize)
+                lbuf = lf.read(bufsize)
+
+                if rbuf != lbuf:
+                    return True
+
+                # if both files end at the same time, we're good
+                if rbuf == lbuf == '':
+                    return False
+
+
 class _Sha1FileUploader(_FileUploader):
     def _needs_update(self, local_path, remote_path=None):
         # hash local file
@@ -112,7 +135,7 @@ def upload_file(local_path, remote_path=None):
     elif uhandler == 'sha1sum':
         uploader = _Sha1FileUploader()
     elif uhandler == 'read':
-        raise NotImplementedError
+        uploader = _ReadFileUploader()
     elif uhandler == 'ignore':
         uploader = _FileUploader()
     else:

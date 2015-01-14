@@ -87,6 +87,14 @@ def _verify_sha(st, local_path, remote_path):
         return remote_hash == m.hexdigest()
 
 
+def _verify_stat(st, local_path, remote_path):
+    lst = os.stat(local_path)
+    l = (lst.st_mtime, lst.st_size)
+    r = (st.st_mtime, st.st_size)
+    log.debug('stat (mtime/size): local {}/{}, remote {}/{}'.format(*(l + r)))
+    return l == r
+
+
 def upload_file(local_path, remote_path=None):
     """Uploads a local file to a remote and if does not exist or differs
     from the local version, uploads it.
@@ -103,7 +111,9 @@ def upload_file(local_path, remote_path=None):
     verify = config['fs_remote_file_verify']
     upload = config['fs_remote_file_upload']
 
-    if verify == 'rsync':
+    if verify == 'stat':
+        verifier = _verify_stat
+    elif verify == 'rsync':
         raise NotImplementedError('rsync-verify is currently not implemented')
     elif verify == 'sha1sum':
         verifier = _verify_sha

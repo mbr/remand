@@ -23,8 +23,8 @@ def run(cmd, input=None, extra_env={}):
 
     if not proc.returncode == 0:
         log.debug('stderr: {}'.format(stderr))
-        raise RemoteFailureError('Remote command exited with exit status {}'
-                                 .format(proc.returncode))
+        raise RemoteFailureError('Remote command {} exited with exit status {}'
+                                 .format(args, proc.returncode))
 
     return stdout, stderr
 

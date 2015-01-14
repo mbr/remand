@@ -121,4 +121,5 @@ def upload_file(local_path, remote_path=None):
             'fs_remote_file_verify configuration setting.'
             .format(config['fs_remote_file_verify'])
         )
+    log.debug('uhandler ({}): {}'.format(uhandler, uploader))
     uploader.upload_file(local_path, remote_path)

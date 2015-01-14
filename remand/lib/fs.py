@@ -2,7 +2,7 @@ from remand import remote
 from remand.status import changed, unchanged
 
 
-def directory(path, mode=0777):
+def create_dir(path, mode=0777):
     """Ensure that a directory exists at path. Parent directories are created
     if needed.
 
@@ -17,7 +17,7 @@ def directory(path, mode=0777):
         head, tail = remote.path.split(path)
         if tail and head:
             # create parent directories
-            directory(head, mode)
+            create_dir(head, mode)
         remote.mkdir(npath, mode)
         changed('Created directory: {}'.format(path))
     else:

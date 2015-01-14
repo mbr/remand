@@ -285,7 +285,12 @@ class SSHRemote(Remote):
 
     @wrap_sftp_errors
     def lstat(self, path):
-        return self._sftp.lstat(path)
+        try:
+            return self._sftp.lstat(path)
+        except IOError, e:
+            if e.errno == 2:
+                return None
+            raise
 
     @wrap_sftp_errors
     def mkdir(self, path, mode=0777):
@@ -329,7 +334,12 @@ class SSHRemote(Remote):
 
     @wrap_sftp_errors
     def stat(self, path):
-        return self._sftp.stat(path)
+        try:
+            return self._sftp.stat(path)
+        except IOError, e:
+            if e.errno == 2:
+                return None
+            raise
 
     @wrap_sftp_errors
     def symlink(self, target, path):

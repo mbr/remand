@@ -223,6 +223,9 @@ class Remote(object):
                  fields: ``st_size``, ``st_uid``, ``st_gid``, ``st_mode``,
                  ``st_atime``, ``st_mtime`` with the same meanings as those
                  of :func:`os.stat`.
+
+                 If the path does not exist, returns ``None`` without throwing
+                 an exception.
         """
         raise NotImplementedError
 

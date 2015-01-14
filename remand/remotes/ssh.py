@@ -105,7 +105,8 @@ def wrap_sftp_errors(f):
             return f(*args, **kwargs)
         except IOError, e:
             fargs = ', '.join(
-                list(args[1:]) + ['{}={}'.format(*v) for v in kwargs]
+                map(repr, args[1:])
+                + ['{}={!r}'.format(*v) for v in kwargs.items()]
             )
             raise RemoteFailureError('SFTP Failed {}({}): {}'.format(
                 f.__name__, fargs, str(e)))

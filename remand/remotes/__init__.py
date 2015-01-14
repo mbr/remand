@@ -1,4 +1,5 @@
 import os
+import posixpath
 import shlex
 
 from six.moves import shlex_quote
@@ -102,6 +103,9 @@ class Remote(object):
     the operation is not successful (in addition to the usual
     :class:`~remand.exc.TransportError`).
     """
+
+    #: the path module to be used on the remote
+    path = posixpath
 
     def getcwd(self):
         """Returns the current working directory.

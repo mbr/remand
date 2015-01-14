@@ -61,7 +61,7 @@ class _FileUploader(object):
     def upload_file(self, local_path, remote_path=None):
         remote_path, st = self._examine_remote(local_path, remote_path)
 
-        if self._needs_update(local_path, remote_path):
+        if st is None or self._needs_update(local_path, remote_path):
             self._put_file(local_path, remote_path)
             changed('Upload {} -> {}'.format(local_path, remote_path))
         else:

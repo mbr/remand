@@ -255,3 +255,10 @@ class Remote(object):
         :param path: File to remove.
         """
         raise NotImplementedError
+
+    def utime(self, path, times):
+        """Set atime/mtime of path.
+
+        :param times: A tuple of ``(atime, mtime)``.
+        """
+        raise NotImplementedError

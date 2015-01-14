@@ -1,6 +1,7 @@
 import hashlib
 from shutil import copyfileobj
 from stat import S_ISDIR
+import os
 
 from remand import remote, config, log
 from remand.exc import ConfigurationError
@@ -42,78 +43,48 @@ def _hash_file(hashfunc, fp):
     return m
 
 
-class _FileUploader(object):
-    def _examine_remote(self, local_path, remote_path):
-        if remote_path is None:
-            remote_path = local_path
-
-        st = remote.stat(remote_path)
-        if st and S_ISDIR(st.st_mode):
-            # if it's a directory, correct path and try again
-            remote_path = remote.path.join(remote_path,
-                                           remote.path.basename(local_path))
-            st = remote.stat(remote_path)
-
-        if st:
-            log.debug('Already exists: {}'.format(remote_path))
-        return remote_path, st
-
-    def upload_file(self, local_path, remote_path=None):
-        remote_path, st = self._examine_remote(local_path, remote_path)
-
-        if st is None or self._needs_update(local_path, remote_path):
-            self._put_file(local_path, remote_path)
-            changed('Upload {} -> {}'.format(local_path, remote_path))
-        else:
-            unchanged('File up-to-date: {}'.format(remote_path))
-
-    def _needs_update(self, local_path, remote_path):
-        return True
-
-    def _put_file(self, local_path, remote_path=None):
-        with file(local_path, 'rb') as src,\
-                remote.file(remote_path, 'wb') as dst:
-            copyfileobj(src, dst)
+def _upload_write(local_path, remote_path):
+    with file(local_path, 'rb') as src,\
+            remote.file(remote_path, 'wb') as dst:
+        copyfileobj(src, dst)
 
 
-class _ReadFileUploader(_FileUploader):
-    def _needs_update(self, local_path, remote_path):
-        with remote.file(remote_path, 'rb') as rf,\
-                file(local_path, 'rb') as lf:
+def _verify_read(st, local_path, remote_path):
+    with remote.file(remote_path, 'rb') as rf,\
+            file(local_path, 'rb') as lf:
 
-            # enable prefetching if files support it
-            # otherwise, performance is horrible (like disabled pipelining)
-            if hasattr(rf, 'prefetch'):
-                rf.prefetch()
+        # enable prefetching if files support it
+        # otherwise, performance is horrible (like disabled pipelining)
+        if hasattr(rf, 'prefetch'):
+            rf.prefetch()
 
-            bufsize = int(config['buffer_size'])
-            while True:
-                rbuf = rf.read(bufsize)
-                lbuf = lf.read(bufsize)
+        bufsize = int(config['buffer_size'])
+        while True:
+            rbuf = rf.read(bufsize)
+            lbuf = lf.read(bufsize)
 
-                if rbuf != lbuf:
-                    return True
+            if rbuf != lbuf:
+                return False
 
-                # if both files end at the same time, we're good
-                if rbuf == lbuf == '':
-                    return False
+            # if both files end at the same time, we're good
+            if rbuf == lbuf == '':
+                return True
 
 
-class _Sha1FileUploader(_FileUploader):
-    def _needs_update(self, local_path, remote_path=None):
-        # hash local file
-        with open(local_path, 'rb') as lfile:
-            m = _hash_file(hashlib.sha1, lfile)
+def _verify_sha(st, local_path, remote_path):
+    # hash local file
+    with open(local_path, 'rb') as lfile:
+        m = _hash_file(hashlib.sha1, lfile)
 
-            # get remote hash
-            stdout, _ = proc.run([config['cmd_sha1sum'], remote_path])
-            remote_hash = stdout.split(None, 1)[0]
+        # get remote hash
+        stdout, _ = proc.run([config['cmd_sha1sum'], remote_path])
+        remote_hash = stdout.split(None, 1)[0]
 
-            log.debug('Local hash: {} Remote hash: {}'.format(
-                m.hexdigest(), remote_hash
-            ))
+        log.debug('Local hash: {} Remote hash: {}'.format(
+            m.hexdigest(), remote_hash
+        ))
 
-            return remote_hash != m.hexdigest()
+        return remote_hash == m.hexdigest()
 
 
 def upload_file(local_path, remote_path=None):
@@ -129,20 +100,56 @@ def upload_file(local_path, remote_path=None):
                         ``local_path``. If it points to a directory, the file
                         will be uploaded to the directory.
     """
-    uhandler = config['fs_remote_file_verify']
-    if uhandler == 'rsync':
-        raise NotImplementedError
-    elif uhandler == 'sha1sum':
-        uploader = _Sha1FileUploader()
-    elif uhandler == 'read':
-        uploader = _ReadFileUploader()
-    elif uhandler == 'ignore':
-        uploader = _FileUploader()
+    verify = config['fs_remote_file_verify']
+    upload = config['fs_remote_file_upload']
+
+    if verify == 'rsync':
+        raise NotImplementedError('rsync-verify is currently not implemented')
+    elif verify == 'sha1sum':
+        verifier = _verify_sha
+    elif verify == 'read':
+        verifier = _verify_read
+    elif verify == 'ignore':
+        verifier = lambda: False
     else:
         raise ConfigurationError(
             'Unknown remote file verification method: {!r}. Check your '
             'fs_remote_file_verify configuration setting.'
             .format(config['fs_remote_file_verify'])
         )
-    log.debug('uhandler ({}): {}'.format(uhandler, uploader))
-    uploader.upload_file(local_path, remote_path)
+
+    if upload == 'write':
+        uploader = _upload_write
+    elif upload == 'rsync':
+        raise NotImplementedError('rsync-upload is currently not implemented')
+    else:
+        raise ConfigurationError(
+            'Unknown upload method: {!r}. Check your '
+            'fs_remote_file_upload configuration setting.'
+            .format(config['fs_remote_file_upload'])
+        )
+
+    log.debug('verify/upload ({}/{}): {}/{}'.format(
+        verify, upload, verifier, uploader)
+    )
+
+    if not os.path.exists(local_path):
+        raise ConfigurationError('Local file {!r} does not exist'.format(
+            local_path)
+        )
+
+    if remote_path is None:
+        remote_path = local_path
+
+    st = remote.stat(remote_path)
+    if st and S_ISDIR(st.st_mode):
+        # if it's a directory, correct path and try again
+        remote_path = remote.path.join(remote_path,
+                                       remote.path.basename(local_path))
+        st = remote.stat(remote_path)
+
+    if not st or not verifier(st, local_path, remote_path):
+        uploader(local_path, remote_path)
+        changed('Upload {} -> {}'.format(local_path, remote_path))
+    else:
+        unchanged('File up-to-date: {}'.format(remote_path))

@@ -356,5 +356,7 @@ class SSHRemote(Remote):
         return self._sftp.unlink(path)
 
     @wrap_sftp_errors
-    def file(self, name, mode='r', bufsize=-1):
-        return self._sftp.file(name, mode, bufsize)
+    def file(self, name, mode='r'):
+        fp = self._sftp.file(name, mode, int(config['buffer_size']))
+        fp.set_pipelined(config.get_bool('sftp_pipelined'))
+        return fp

@@ -105,3 +105,21 @@ def upload_file(local_path, remote_path=None):
         changed('Upload {} -> {}'.format(local_path, remote_path))
     else:
         unchanged('File up-to-date: {}'.format(remote_path))
+
+
+def upload_string(buf, remote_path):
+    """Similar to :func:`~remand.lib.fs.upload_file`, but uploads a
+    buffer instead of a file-like object.
+
+    :param buf: Data to send. Can be string or unicode.
+    :param remote_path: Remote name for the file. See
+                        :func:`~remand.lib.fs.upload_file` for details.
+    """
+    st, remote_path = _expand_remote_dest(None, remote_path)
+
+    verifier = Verifier._by_short_name(config['fs_remote_string_verify'])()
+    uploader = Uploader._by_short_name(config['fs_remote_string_upload'])()
+
+    if not st or not verifier.verify_buffer(st, buf, remote_path):
+        uploader.upload_buffer(buf, remote_path)
+        changed('Uploaded buffer ({}) -> {}'.format(len(buf), remote_path))

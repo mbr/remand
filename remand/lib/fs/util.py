@@ -1,3 +1,4 @@
+from remand import log
 from remand.exc import ConfigurationError
 
 
@@ -18,7 +19,11 @@ class RegistryBase(object):
                 .format(cls.__name__, short_name)
             )
 
-        return cls.registry[short_name]
+        subclass = cls.registry[short_name]
+        log.debug('{} {!r} -> {}'.format(
+            cls.__name__, short_name, subclass.__name__)
+        )
+        return subclass
 
     def __str__(self):
         return '{}'.format(self.__class__.__name__)

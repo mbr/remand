@@ -10,6 +10,37 @@ from .verify import Verifier
 from .upload import Uploader
 
 
+def _expand_remote_dest(local_path, remote_path):
+    if remote_path is None:
+        remote_path = local_path
+
+    st = remote.lstat(remote_path)
+    if st:
+        # file exists, check if it is a link
+        if S_ISLNK(st.st_mode):
+            # normalize (dangling links will raise an exception)
+            remote_path = remote.normalize(remote_path)
+
+            # update stat
+            st = remote.lstat(remote_path)
+
+        # dir-expansion, since st is guaranteed not be a link
+        if st and S_ISDIR(st.st_mode):
+            # if it's a directory, correct path
+            remote_path = remote.path.join(remote_path,
+                                           remote.path.basename(local_path))
+
+            st = remote.lstat(remote_path)
+            log.debug('Expanded remote_path to {!r}'.format(remote_path))
+
+    # ensure st is either non-existant, or a regular file
+    if st and not S_ISREG(st.st_mode):
+        raise RemoteFailureError(
+            'Not a regular file: {!r}'.format(remote_path)
+        )
+    return st, remote_path
+
+
 def create_dir(path, mode=0777):
     """Ensure that a directory exists at path. Parent directories are created
     if needed.
@@ -47,40 +78,10 @@ def upload_file(local_path, remote_path=None):
                         will be uploaded to the directory. Symbolic links not
                         pointing to a directory are an error.
     """
-    if remote_path is None:
-        remote_path = local_path
-
-    st = remote.lstat(remote_path)
-    if st:
-        # file exists, check if it is a link
-        if S_ISLNK(st.st_mode):
-            # normalize (dangling links will raise an exception)
-            remote_path = remote.normalize(remote_path)
-
-            # update stat
-            st = remote.lstat(remote_path)
-
-        # dir-expansion, since st is guaranteed not be a link
-        if st and S_ISDIR(st.st_mode):
-            # if it's a directory, correct path
-            remote_path = remote.path.join(remote_path,
-                                           remote.path.basename(local_path))
-
-            st = remote.lstat(remote_path)
-            log.debug('Expanded remote_path to {!r}'.format(remote_path))
-
-    # ensure st is either non-existant, or a regular file
-    if st and not S_ISREG(st.st_mode):
-        raise RemoteFailureError(
-            'Not a regular file: {!r}'.format(remote_path)
-        )
+    st, remote_path = _expand_remote_dest(local_path, remote_path)
 
     verifier = Verifier._by_short_name(config['fs_remote_file_verify'])()
     uploader = Uploader._by_short_name(config['fs_remote_file_upload'])()
-
-    log.debug('verify/upload: {}/{}'.format(
-        verifier, uploader)
-    )
 
     if not os.path.exists(local_path):
         raise ConfigurationError('Local file {!r} does not exist'.format(

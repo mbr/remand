@@ -87,8 +87,8 @@ def upload_file(local_path, remote_path=None):
             local_path)
         )
 
-    if not st or not verifier.verify(st, local_path, remote_path):
-        uploader.upload(local_path, remote_path)
+    if not st or not verifier.verify_file(st, local_path, remote_path):
+        uploader.upload_file(local_path, remote_path)
         if config.get_bool('fs_update_mtime'):
             lst = os.stat(local_path)
             times = (lst.st_mtime, lst.st_mtime)

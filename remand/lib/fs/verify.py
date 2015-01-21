@@ -20,7 +20,7 @@ def _hash_file(hashfunc, fp):
 
 
 class Verifier(RegistryBase):
-    def verify(self, st, local_path, remote_path):
+    def verify_file(self, st, local_path, remote_path):
         raise NotImplementedError
 
 
@@ -28,7 +28,7 @@ class Verifier(RegistryBase):
 class VerifierIgnore(Verifier):
     short_name = 'ignore'
 
-    def verify(self, st, local_path, remote_path):
+    def verify_file(self, st, local_path, remote_path):
         return False
 
 
@@ -36,7 +36,7 @@ class VerifierIgnore(Verifier):
 class VerifierRead(Verifier):
     short_name = 'read'
 
-    def verify(self, st, local_path, remote_path):
+    def verify_file(self, st, local_path, remote_path):
         with remote.file(remote_path, 'rb') as rf,\
                 file(local_path, 'rb') as lf:
 
@@ -62,7 +62,7 @@ class VerifierRead(Verifier):
 class VerifierSHA(Verifier):
     short_name = 'sha1sum'
 
-    def verify(self, st, local_path, remote_path):
+    def verify_file(self, st, local_path, remote_path):
         # hash local file
         with open(local_path, 'rb') as lfile:
             m = _hash_file(hashlib.sha1, lfile)
@@ -82,7 +82,7 @@ class VerifierSHA(Verifier):
 class VerifierStat(Verifier):
     short_name = 'stat'
 
-    def verify(self, st, local_path, remote_path):
+    def verify_file(self, st, local_path, remote_path):
         lst = os.stat(local_path)
 
         mul = int(config['fs_mtime_multiplier'])

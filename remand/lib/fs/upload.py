@@ -5,17 +5,22 @@ from .util import RegistryBase
 
 
 class Uploader(RegistryBase):
-    def upload_file(self, st, local_path, remote_path):
+    registry = {}
+
+    def upload_file(self, local_path, remote_path):
+        raise NotImplementedError
+
+    def upload_buffer(self, buf, remote_path):
         raise NotImplementedError
 
 
 @Uploader._registered
-class UploaderRsync(RegistryBase):
+class UploaderRsync(Uploader):
     short_name = 'rsync'
 
 
 @Uploader._registered
-class UploaderWrite(RegistryBase):
+class UploaderWrite(Uploader):
     short_name = 'write'
 
     def upload_file(self, local_path, remote_path):

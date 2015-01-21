@@ -3,8 +3,6 @@ from remand.exc import ConfigurationError
 
 
 class RegistryBase(object):
-    registry = {}
-
     @classmethod
     def _registered(cls, child):
         cls.registry[child.short_name] = child

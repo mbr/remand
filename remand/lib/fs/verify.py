@@ -20,7 +20,12 @@ def _hash_file(hashfunc, fp):
 
 
 class Verifier(RegistryBase):
+    registry = {}
+
     def verify_file(self, st, local_path, remote_path):
+        raise NotImplementedError
+
+    def verify_buffer(self, st, buf, remote_path):
         raise NotImplementedError
 
 

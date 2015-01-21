@@ -1,6 +1,7 @@
 from shutil import copyfileobj
 
 from remand import remote
+from remand.exc import ConfigurationError
 from .util import RegistryBase
 
 
@@ -8,10 +9,14 @@ class Uploader(RegistryBase):
     registry = {}
 
     def upload_file(self, local_path, remote_path):
-        raise NotImplementedError
+        raise ConfigurationError('{} does not support file uploads.'.format(
+            self.__class__.__name__
+        ))
 
     def upload_buffer(self, buf, remote_path):
-        raise NotImplementedError
+        raise ConfigurationError('{} does not support buffer uploads.'.format(
+            self.__class__.__name__
+        ))
 
 
 @Uploader._registered

@@ -2,6 +2,7 @@ import hashlib
 import os
 
 from remand import remote, config, log
+from remand.exc import ConfigurationError
 from remand.lib import proc
 
 from .util import RegistryBase
@@ -23,10 +24,14 @@ class Verifier(RegistryBase):
     registry = {}
 
     def verify_file(self, st, local_path, remote_path):
-        raise NotImplementedError
+        raise ConfigurationError('{} does not verify files.'.format(
+            self.__class__.__name__
+        ))
 
     def verify_buffer(self, st, buf, remote_path):
-        raise NotImplementedError
+        raise ConfigurationError('{} does not verify buffers.'.format(
+            self.__class__.__name__
+        ))
 
 
 @Verifier._registered

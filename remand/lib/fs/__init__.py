@@ -12,6 +12,8 @@ from .upload import Uploader
 
 def _expand_remote_dest(local_path, remote_path):
     if remote_path is None:
+        if local_path is None:
+            raise RuntimeError('one of local_path, remote_path is required')
         remote_path = local_path
 
     st = remote.lstat(remote_path)
@@ -26,6 +28,11 @@ def _expand_remote_dest(local_path, remote_path):
 
         # dir-expansion, since st is guaranteed not be a link
         if st and S_ISDIR(st.st_mode):
+            if local_path is None:
+                raise RemoteFailureError('Is a directory: {}'.format(
+                    remote_path
+                ))
+
             # if it's a directory, correct path
             remote_path = remote.path.join(remote_path,
                                            remote.path.basename(local_path))

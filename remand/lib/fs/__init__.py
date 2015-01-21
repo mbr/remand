@@ -1,4 +1,3 @@
-from shutil import copyfileobj
 from stat import S_ISDIR, S_ISLNK, S_ISREG
 import os
 
@@ -8,6 +7,7 @@ from remand.exc import ConfigurationError, RemoteFailureError
 from remand.status import changed, unchanged
 
 from .verify import Verifier
+from .upload import Uploader
 
 
 def create_dir(path, mode=0777):
@@ -30,12 +30,6 @@ def create_dir(path, mode=0777):
         changed('Created directory: {}'.format(path))
     else:
         unchanged('Already exists: {}'.format(path))
-
-
-def _upload_write(local_path, remote_path):
-    with file(local_path, 'rb') as src,\
-            remote.file(remote_path, 'wb') as dst:
-        copyfileobj(src, dst)
 
 
 def upload_file(local_path, remote_path=None):
@@ -81,20 +75,8 @@ def upload_file(local_path, remote_path=None):
             'Not a regular file: {!r}'.format(remote_path)
         )
 
-    upload = config['fs_remote_file_upload']
-
     verifier = Verifier._by_short_name(config['fs_remote_file_verify'])()
-
-    if upload == 'write':
-        uploader = _upload_write
-    elif upload == 'rsync':
-        raise NotImplementedError('rsync-upload is currently not implemented')
-    else:
-        raise ConfigurationError(
-            'Unknown upload method: {!r}. Check your '
-            'fs_remote_file_upload configuration setting.'
-            .format(config['fs_remote_file_upload'])
-        )
+    uploader = Uploader._by_short_name(config['fs_remote_file_upload'])()
 
     log.debug('verify/upload: {}/{}'.format(
         verifier, uploader)
@@ -106,7 +88,7 @@ def upload_file(local_path, remote_path=None):
         )
 
     if not st or not verifier.verify(st, local_path, remote_path):
-        uploader(local_path, remote_path)
+        uploader.upload(local_path, remote_path)
         if config.get_bool('fs_update_mtime'):
             lst = os.stat(local_path)
             times = (lst.st_mtime, lst.st_mtime)

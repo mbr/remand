@@ -2,8 +2,9 @@ import hashlib
 import os
 
 from remand import remote, config, log
-from remand.exc import ConfigurationError
 from remand.lib import proc
+
+from .util import RegistryBase
 
 
 def _hash_file(hashfunc, fp):
@@ -18,31 +19,9 @@ def _hash_file(hashfunc, fp):
     return m
 
 
-class Verifier(object):
-    registry = {}
-
+class Verifier(RegistryBase):
     def verify(self, st, local_path, remote_path):
         raise NotImplementedError
-
-    @classmethod
-    def _registered(cls, child):
-        cls.registry[child.short_name] = child
-        return child
-
-    @classmethod
-    def _by_short_name(cls, short_name):
-        v = cls.registry.get(short_name, None)
-        if v is None:
-            raise ConfigurationError(
-                'Unknown remote file verification method: {!r}. Check your '
-                'fs_remote_*_verify configuration setting.'
-                .format(short_name)
-            )
-
-        return cls.registry[short_name]
-
-    def __str__(self):
-        return 'Verifier<{}>'.format(self.short_name)
 
 
 @Verifier._registered
@@ -119,4 +98,3 @@ class VerifierStat(Verifier):
 @Verifier._registered
 class VerifierRSync(Verifier):
     short_name = 'rsync'
-

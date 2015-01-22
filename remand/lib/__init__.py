@@ -38,18 +38,22 @@ class InfoManager(object):
         return func()
 
 
-def memoize(f):
-    @wraps(f)
-    def _(*args):
-        name = '__memoize_{}.{}'.format(f.__module__, f.__name__)
-        sig = (name,) + args
-        if config.get_bool('info_cache') and sig in info.cache:
-            v = info.cache[sig]
-            log.debug('Memoize cache hit ({}): {}'.format(sig, v))
-        else:
-            v = f(*args)
-            log.debug('Memoize cache miss ({}): {}'.format(sig, v))
-            info.cache[sig] = v
-        return v
+def memoize(key=None):
+    def wrapper(f):
+        name = key or '__memoize_{}.{}'.format(f.__module__, f.__name__)
 
-    return _
+        @wraps(f)
+        def _(*args):
+            sig = (name,) + args
+            if config.get_bool('info_cache') and sig in info.cache:
+                v = info.cache[sig]
+                log.debug('Memoize cache hit ({}): {}'.format(sig, v))
+            else:
+                v = f(*args)
+                log.debug('Memoize cache miss ({}): {}'.format(sig, v))
+                info.cache[sig] = v
+            return v
+
+        _.memoize_key = name
+        return _
+    return wrapper

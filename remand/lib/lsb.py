@@ -2,7 +2,7 @@ from remand.lib import proc
 from remand.lib import memoize
 
 
-@memoize
+@memoize()
 def _get_lsb_info():
     stdout, stderr = proc.run(['lsb_release', '--all', '--short'])
     lines = stdout.splitlines()

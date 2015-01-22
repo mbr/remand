@@ -32,3 +32,7 @@ class UploaderWrite(Uploader):
         with file(local_path, 'rb') as src,\
                 remote.file(remote_path, 'wb') as dst:
             copyfileobj(src, dst)
+
+    def upload_buffer(self, buf, remote_path):
+        with remote.file(remote_path, 'wb') as dst:
+            dst.write(buf)

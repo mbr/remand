@@ -8,18 +8,6 @@ from remand.lib import proc
 from .util import RegistryBase
 
 
-def _hash_file(hashfunc, fp):
-    m = hashfunc()
-
-    while True:
-        buf = fp.read(int(config['buffer_size']))
-        if not buf:
-            break
-        m.update(buf)
-
-    return m
-
-
 class Verifier(RegistryBase):
     registry = {}
 
@@ -71,21 +59,43 @@ class VerifierRead(Verifier):
 @Verifier._registered
 class VerifierSHA(Verifier):
     short_name = 'sha1sum'
+    hashfunc = hashlib.sha1
 
-    def verify_file(self, st, local_path, remote_path):
-        # hash local file
-        with open(local_path, 'rb') as lfile:
-            m = _hash_file(hashlib.sha1, lfile)
-
+    def _get_remote_hash(self, remote_path):
             # get remote hash
             stdout, _ = proc.run([config['cmd_sha1sum'], remote_path])
             remote_hash = stdout.split(None, 1)[0]
 
-            log.debug('Local hash: {} Remote hash: {}'.format(
-                m.hexdigest(), remote_hash
-            ))
+            return remote_hash
 
-            return remote_hash == m.hexdigest()
+    def verify_file(self, st, local_path, remote_path):
+        # hash local file
+        with open(local_path, 'rb') as lfile:
+            m = self.hashfunc()
+
+            # read full file in buffer sized chunks
+            while True:
+                buf = lfile.read(int(config['buffer_size']))
+                if not buf:
+                    break
+                m.update(buf)
+
+        remote_hash = self._get_remote_hash(remote_path)
+        log.debug('Local hash: {} Remote hash: {}'.format(
+            m.hexdigest(), remote_hash
+        ))
+
+        return remote_hash == m.hexdigest()
+
+    def verify_buffer(self, st, buf, remote_path):
+        m = self.hashfunc(buf)
+        remote_hash = self._get_remote_hash(remote_path)
+
+        log.debug('Local hash: {} Remote hash: {}'.format(
+            m.hexdigest(), remote_hash
+        ))
+
+        return remote_hash == m.hexdigest()
 
 
 @Verifier._registered

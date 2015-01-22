@@ -10,6 +10,7 @@ from logbook.more import ColorizedStderrHandler
 
 from . import _context
 from .exc import RemandError, TransportError
+from .lib import InfoManager
 from .remotes.ssh import SSHRemote
 from .uri import Uri
 from .utils import TypeConversionChainMap
@@ -122,6 +123,7 @@ def remand(module, uris, configfiles):
                 _context.top['config'] = cfg
                 _context.top['log'] = log
                 _context.top['state'] = {}
+                _context.top['info'] = InfoManager()
 
                 transport_cls = all_transports.get(cfg['uri'].transport, None)
                 if not transport_cls:

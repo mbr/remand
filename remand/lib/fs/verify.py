@@ -55,6 +55,17 @@ class VerifierRead(Verifier):
                 if rbuf == lbuf == '':
                     return True
 
+    def verify_buffer(self, st, buf, remote_path):
+        with remote.file(remote_path, 'rb') as rf:
+            # enable prefetching if files support it
+            # otherwise, performance is horrible (like disabled pipelining)
+            if hasattr(rf, 'prefetch'):
+                rf.prefetch()
+
+            rbuf = rf.read()
+
+        return rbuf == buf
+
 
 @Verifier._registered
 class VerifierSHA(Verifier):

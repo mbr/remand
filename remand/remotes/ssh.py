@@ -12,7 +12,9 @@ from six.moves import shlex_quote
 
 from . import Remote, RemoteProcess, _validate_umask
 from .. import config, log
-from ..exc import TransportError, RemoteFailureError
+from ..exc import (TransportError, RemoteFailureError,
+                   RemoteFileDoesNotExistError)
+
 
 _KNOWN_HOSTS_ERROR = (
     "The host '{}' was not found in your known_hosts file. "
@@ -108,6 +110,8 @@ def wrap_sftp_errors(f):
                 map(repr, args[1:])
                 + ['{}={!r}'.format(*v) for v in kwargs.items()]
             )
+            if e.errno == 2:
+                raise RemoteFileDoesNotExistError(str(e))
             raise RemoteFailureError('SFTP Failed {}({}): {}'.format(
                 f.__name__, fargs, str(e)))
     return wrap_ssh_errors(_)

@@ -2,7 +2,8 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG
 import os
 
 from remand import remote, config, log
-from remand.exc import ConfigurationError, RemoteFailureError
+from remand.exc import (ConfigurationError, RemoteFailureError,
+                        RemoteFileDoesNotExistError)
 
 from remand.status import changed, unchanged
 
@@ -54,6 +55,7 @@ def create_dir(path, mode=0777):
 
     :param path: Directory to create if it does not exist.
     :param mode: Mode for newly created parent directories.
+    :param return: ``False`` if the path existed, ``True`` otherwise.
     """
     npath = remote.path.normpath(path)
 
@@ -66,8 +68,25 @@ def create_dir(path, mode=0777):
             create_dir(head, mode)
         remote.mkdir(npath, mode)
         changed('Created directory: {}'.format(path))
-    else:
-        unchanged('Already exists: {}'.format(path))
+        return True
+
+    unchanged('Already exists: {}'.format(path))
+    return False
+
+
+def remove_file(remote_path):
+    """Removes a remote file, as long as it is a file or a symbolic link.
+
+    :param remote_path: Remote file to remote.
+    """
+    try:
+        remote.unlink('asdasdasdsad')
+    except RemoteFileDoesNotExistError:
+        unchanged('File already gone: {}'.format(remote_path))
+        return False
+
+    changed('Removed: {}'.format(remote_path))
+    return True
 
 
 def upload_file(local_path, remote_path=None):
@@ -84,6 +103,8 @@ def upload_file(local_path, remote_path=None):
                         ``local_path``. If it points to a directory, the file
                         will be uploaded to the directory. Symbolic links not
                         pointing to a directory are an error.
+
+    :param return: ``False`` if no upload was necessary, ``True`` otherwise.
     """
     st, remote_path = _expand_remote_dest(local_path, remote_path)
 
@@ -103,8 +124,10 @@ def upload_file(local_path, remote_path=None):
             remote.utime(remote_path, times)
             log.debug('Updated atime/mtime: {}'.format(times))
         changed('Upload {} -> {}'.format(local_path, remote_path))
-    else:
-        unchanged('File up-to-date: {}'.format(remote_path))
+        return True
+
+    unchanged('File up-to-date: {}'.format(remote_path))
+    return False
 
 
 def upload_string(buf, remote_path):
@@ -114,6 +137,7 @@ def upload_string(buf, remote_path):
     :param buf: Data to send. Can be string or unicode.
     :param remote_path: Remote name for the file. See
                         :func:`~remand.lib.fs.upload_file` for details.
+    :param return: ``False`` if no upload was necessary, ``True`` otherwise.
     """
     st, remote_path = _expand_remote_dest(None, remote_path)
 
@@ -123,5 +147,7 @@ def upload_string(buf, remote_path):
     if not st or not verifier.verify_buffer(st, buf, remote_path):
         uploader.upload_buffer(buf, remote_path)
         changed('Upload buffer ({}) -> {}'.format(len(buf), remote_path))
-    else:
-        unchanged('File up-to-date: {}'.format(remote_path))
+        return True
+
+    unchanged('File up-to-date: {}'.format(remote_path))
+    return False

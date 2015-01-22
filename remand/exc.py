@@ -11,5 +11,9 @@ class RemoteFailureError(RemandError):
     recovered."""
 
 
+class RemoteFileDoesNotExistError(RemoteFailureError):
+    pass
+
+
 class ConfigurationError(RemandError):
     """A requested operation is not possible, no recovery."""

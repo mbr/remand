@@ -122,4 +122,6 @@ def upload_string(buf, remote_path):
 
     if not st or not verifier.verify_buffer(st, buf, remote_path):
         uploader.upload_buffer(buf, remote_path)
-        changed('Uploaded buffer ({}) -> {}'.format(len(buf), remote_path))
+        changed('Upload buffer ({}) -> {}'.format(len(buf), remote_path))
+    else:
+        unchanged('File up-to-date: {}'.format(remote_path))

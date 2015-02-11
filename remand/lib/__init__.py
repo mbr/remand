@@ -54,6 +54,11 @@ def memoize(key=None):
                 info.cache[sig] = v
             return v
 
-        _.memoize_key = name
+        def update_cache(value, *args):
+            sig = (name,) + args
+            info.cache[sig] = value
+
+        _.update_cache = update_cache
         return _
+
     return wrapper

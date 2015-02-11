@@ -1,10 +1,11 @@
 from collections import OrderedDict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from debian.deb822 import Deb822
 from remand import log, remote
+from remand.status import changed, unchanged
 from remand.exc import RemoteFailureError
-from remand.lib import proc
+from remand.lib import proc, memoize
 
 
 def _timestamp_to_datetime(rfn):
@@ -17,6 +18,7 @@ def _timestamp_to_datetime(rfn):
     return datetime.fromtimestamp(ts)
 
 
+@memoize()
 def info_last_update():
     # note: may be inaccurate, if the necessary hooks are not set
     return max(
@@ -25,9 +27,20 @@ def info_last_update():
     )
 
 
+@memoize()
 def info_last_upgrade():
     # note: may be inaccurate, if the necessary hooks are not set
     return _timestamp_to_datetime('/var/lib/apt/periodic/upgrade-stamp')
+
+
+def update(max_age=None):
+    now = datetime.utcnow()
+    if max_age and now - info_last_update() < timedelta(seconds=max_age):
+        unchanged('apt cache is not older than {} seconds'.format(max_age))
+        return
+
+    changed('Updated apt cache')
+    info_last_update.update_cache(datetime.utcnow())
 
 
 def query_packages(*pkgs):

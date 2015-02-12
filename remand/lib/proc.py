@@ -36,7 +36,8 @@ def sudo(user=None, password=None):
     sudo_args = ['sudo', '-E', '-H']
 
     if user:
-        sudo_args.append('-u', user)
+        sudo_args.append('-u')
+        sudo_args.append(user)
     if password:
         raise NotImplementedError('Currently, sudo with password is not '
                                   'supported.')

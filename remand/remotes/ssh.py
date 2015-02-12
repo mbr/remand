@@ -154,7 +154,7 @@ class SSHRemoteProcess(RemoteProcess):
 
         if input is not None:
             self.stdin.write(input)
-            log.debug('Input sent')
+            log.debug('communicate: Input sent')
         self.stdin.close()
 
         # wait for stdout/stderr to finish

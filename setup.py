@@ -33,5 +33,5 @@ setup(
                       'chardet', ],
     entry_points="""
         [console_scripts]
-        remand=remand.cli:remand
+        remand=remand.cli:cli
     """)

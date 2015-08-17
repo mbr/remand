@@ -84,14 +84,19 @@ class HostRegistry(object):
                                         if exp.match(hostname)])
 
 
-@click.command()
+@click.group(help='Administer servers remotely')
+def cli():
+    pass
+
+
+@cli.command()
 @click.argument('module', type=click.Path(exists=True))
 @click.argument('uris', default=None, nargs=-1, callback=validate_uris)
 @click.option('configfiles', '--config', '-c',
               envvar='REMAND_CONFIG',
               multiple=True,
               type=click.Path())
-def remand(module, uris, configfiles):
+def run(module, uris, configfiles):
     handler = ColorizedStderrHandler()
 
     with handler.applicationbound():

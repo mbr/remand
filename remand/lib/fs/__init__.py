@@ -31,8 +31,7 @@ def _expand_remote_dest(local_path, remote_path):
         if st and S_ISDIR(st.st_mode):
             if local_path is None:
                 raise RemoteFailureError('Is a directory: {}'.format(
-                    remote_path
-                ))
+                    remote_path))
 
             # if it's a directory, correct path
             remote_path = remote.path.join(remote_path,
@@ -44,8 +43,7 @@ def _expand_remote_dest(local_path, remote_path):
     # ensure st is either non-existant, or a regular file
     if st and not S_ISREG(st.st_mode):
         raise RemoteFailureError(
-            'Not a regular file: {!r}'.format(remote_path)
-        )
+            'Not a regular file: {!r}'.format(remote_path))
     return st, remote_path
 
 
@@ -113,8 +111,7 @@ def upload_file(local_path, remote_path=None):
 
     if not os.path.exists(local_path):
         raise ConfigurationError('Local file {!r} does not exist'.format(
-            local_path)
-        )
+            local_path))
 
     if not st or not verifier.verify_file(st, local_path, remote_path):
         uploader.upload_file(local_path, remote_path)

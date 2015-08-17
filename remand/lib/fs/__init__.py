@@ -78,7 +78,7 @@ def remove_file(remote_path):
     :param remote_path: Remote file to remote.
     """
     try:
-        remote.unlink('asdasdasdsad')
+        remote.unlink(remote_path)
     except RemoteFileDoesNotExistError:
         unchanged('File already gone: {}'.format(remote_path))
         return False

@@ -13,13 +13,11 @@ class Verifier(RegistryBase):
 
     def verify_file(self, st, local_path, remote_path):
         raise ConfigurationError('{} does not verify files.'.format(
-            self.__class__.__name__
-        ))
+            self.__class__.__name__))
 
     def verify_buffer(self, st, buf, remote_path):
         raise ConfigurationError('{} does not verify buffers.'.format(
-            self.__class__.__name__
-        ))
+            self.__class__.__name__))
 
 
 @Verifier._registered
@@ -73,11 +71,11 @@ class VerifierSHA(Verifier):
     hashfunc = hashlib.sha1
 
     def _get_remote_hash(self, remote_path):
-            # get remote hash
-            stdout, _ = proc.run([config['cmd_sha1sum'], remote_path])
-            remote_hash = stdout.split(None, 1)[0]
+        # get remote hash
+        stdout, _, _ = proc.run([config['cmd_sha1sum'], remote_path])
+        remote_hash = stdout.split(None, 1)[0]
 
-            return remote_hash
+        return remote_hash
 
     def verify_file(self, st, local_path, remote_path):
         # hash local file
@@ -93,8 +91,7 @@ class VerifierSHA(Verifier):
 
         remote_hash = self._get_remote_hash(remote_path)
         log.debug('Local hash: {} Remote hash: {}'.format(
-            m.hexdigest(), remote_hash
-        ))
+            m.hexdigest(), remote_hash))
 
         return remote_hash == m.hexdigest()
 
@@ -103,8 +100,7 @@ class VerifierSHA(Verifier):
         remote_hash = self._get_remote_hash(remote_path)
 
         log.debug('Local hash: {} Remote hash: {}'.format(
-            m.hexdigest(), remote_hash
-        ))
+            m.hexdigest(), remote_hash))
 
         return remote_hash == m.hexdigest()
 

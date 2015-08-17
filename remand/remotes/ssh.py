@@ -11,7 +11,7 @@ from paramiko.sftp_client import SFTPClient
 from paramiko.ssh_exception import SSHException, BadHostKeyException
 from six.moves import shlex_quote
 
-from .. import config, log, utils
+from .. import config, log, util
 from .base import Remote, RemoteProcess
 from ..exc import (TransportError, RemoteFailureError,
                    RemoteFileDoesNotExistError, ConfigurationError)
@@ -340,7 +340,7 @@ class SSHRemote(Remote):
     @wrap_sftp_errors
     def umask(self, umask):
         try:
-            utils.validate_umask(umask)
+            util.validate_umask(umask)
         except ValueError as e:
             raise_from(ConfigurationError(str(e)), e)
         raise NotImplementedError('Currently, the SSH transport does not '

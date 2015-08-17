@@ -5,7 +5,7 @@ import re
 import click
 import logbook
 
-from .utils import TypeConversionChainMap
+from .util import TypeConversionChainMap
 
 log = logbook.Logger('config')
 

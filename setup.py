@@ -26,6 +26,8 @@ setup(
                       'logbook',
                       'configparser>=3.5.0b2',
                       'stuf',
+                      'werkzeug',
+                      'paramiko',  # needs our bugfix!
                       # chardet is a hidden dependency of python-debian
                       'python-debian',
                       'chardet', ],

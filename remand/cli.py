@@ -84,13 +84,3 @@ def run(obj, module, uris):
             log.error(str(e))
         finally:
             _context.pop()
-
-
-@click.group()
-def rutil():
-    pass
-
-
-@rutil.command()
-def config_path():
-    click.echo(CONFIG_INI_PATH)

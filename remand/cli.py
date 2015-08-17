@@ -21,14 +21,19 @@ APP_NAME = 'remand'
 
 
 @click.group(help='Administer servers remotely')
+@click.option('--debug', '-d',
+              help='Output more debugging information',
+              is_flag=True,
+              default=False)
 @click.option('configfiles', '--config', '-c',
               multiple=True,
               type=click.Path(),
               help='Additional configuration files to read')
 @click.pass_context
-def cli(context, configfiles):
+def cli(context, configfiles, debug):
     obj = context.obj = {}
-    handler = ColorizedStderrHandler()
+    handler = ColorizedStderrHandler(
+        level=logbook.DEBUG if debug else logbook.INFO)
 
     # setup logging
     handler.push_application()

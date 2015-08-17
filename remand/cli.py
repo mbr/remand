@@ -1,19 +1,15 @@
-import configparser
 import imp
-import os
-import re
 
 import click
-from click import BadParameter
 import logbook
 from logbook.more import ColorizedStderrHandler
 
 from . import _context
+from .config import HostRegistry, load_configuration
 from .exc import RemandError, TransportError
 from .lib import InfoManager
 from .remotes.ssh import SSHRemote
 from .uri import Uri
-from .utils import TypeConversionChainMap
 
 # medium-term, this could become a plugin-based solution, if there's need
 all_transports = {'ssh': SSHRemote, }
@@ -22,131 +18,72 @@ all_transports = {'ssh': SSHRemote, }
 log = logbook.Logger('remand')
 
 APP_NAME = 'remand'
-CONFIG_INI_PATH = os.path.join(click.get_app_dir(APP_NAME), 'config.ini')
-
-
-def validate_uris(ctx, param, value):
-    """Parse a list of host address parameters."""
-    hs = []
-
-    for uri in value:
-        try:
-            hs.append(Uri.from_string(uri))
-        except ValueError:
-            raise BadParameter('{} is not a valid URI'.format(uri))
-
-    return hs
-
-
-def load_configuration(configfiles=[]):
-    """Loads configuration information.
-
-    Will load ``defaults.cfg`` (shipped with remand), ``config.ini`` from the
-    application directory (similar to ``~/.config/remand/``) and any extra
-    configuration files passed.
-
-    :param configfiles: Additional configuration files to read.
-    """
-    fns = [
-        os.path.join(os.path.dirname(__file__), 'defaults.cfg'),
-        CONFIG_INI_PATH,
-    ]
-    fns.extend(configfiles)
-
-    cfg = configparser.ConfigParser(allow_no_value=True)
-    log.debug('Trying configuration files: {}'.format(fns))
-    log.debug('Read configuration from {}'.format(cfg.read(fns)))
-    return cfg
-
-
-class HostRegistry(object):
-    MATCH_PREFIX = 'Match:'
-    HOST_PREFIX = 'Host:'
-
-    def __init__(self, cfg):
-        self.host_res = []
-
-        for name, sect in cfg.items():
-            if name.startswith(self.HOST_PREFIX):
-                pattern = re.escape(name[len(self.HOST_PREFIX):])
-
-            elif name.startswith(self.MATCH_PREFIX):
-                pattern = name[len(self.MATCH_PREFIX):]
-                if 'match' in sect:
-                    pattern = sect['match']
-            else:
-                continue
-
-            self.host_res.append((re.compile(pattern + '$'), sect))
-
-    def get_config_for_host(self, hostname):
-        return TypeConversionChainMap(*[sect for exp, sect in self.host_res
-                                        if exp.match(hostname)])
 
 
 @click.group(help='Administer servers remotely')
-def cli():
-    pass
-
-
-@cli.command()
-@click.argument('module', type=click.Path(exists=True))
-@click.argument('uris', default=None, nargs=-1, callback=validate_uris)
 @click.option('configfiles', '--config', '-c',
-              envvar='REMAND_CONFIG',
               multiple=True,
-              type=click.Path())
-def run(module, uris, configfiles):
+              type=click.Path(),
+              help='Additional configuration files to read')
+@click.pass_context
+def cli(context, configfiles):
+    obj = context.obj = {}
     handler = ColorizedStderrHandler()
 
-    with handler.applicationbound():
-        # read configuration
-        global_cfg = load_configuration(configfiles)
+    # setup logging
+    handler.push_application()
 
-        # set up host-specific config
-        host_reg = HostRegistry(global_cfg)
+    # read configuration and host registry
+    obj['config'] = load_configuration(APP_NAME, configfiles)
+    obj['hosts'] = HostRegistry(obj['config'])
 
-        # instantiate the module
-        active_mod = imp.load_source('_remand_active_mod', module)
 
-        for uri in uris:
-            _context.push({})
-            try:
-                # lookup host
-                cfg = host_reg.get_config_for_host(uri.host)
+@cli.command(help='Runs a module on a number of servers')
+@click.argument('module', type=click.Path(exists=True))
+@click.argument('uris', default=None, nargs=-1, type=Uri.from_string)
+@click.pass_obj
+def run(obj, module, uris):
+    # instantiate the module
+    active_mod = imp.load_source('_remand_active_mod', module)
 
-                # add layer for our values
-                cfg = cfg.new_child()
+    for uri in uris:
+        _context.push({})
+        try:
+            # lookup host
+            cfg = obj['hosts'].get_config_for_host(uri.host)
 
-                # construct new uri
-                _tmp = cfg.new_child()
-                _tmp.update(uri.as_dict())
+            # add layer for our values
+            cfg = cfg.new_child()
 
-                cfg['uri'] = Uri.from_dict(_tmp)
+            # construct new uri
+            _tmp = cfg.new_child()
+            _tmp.update(uri.as_dict())
 
-                # create thread-locals:
-                _context.top['config'] = cfg
-                _context.top['log'] = log
-                _context.top['state'] = {}
-                _context.top['info'] = InfoManager()
+            cfg['uri'] = Uri.from_dict(_tmp)
 
-                transport_cls = all_transports.get(cfg['uri'].transport, None)
-                if not transport_cls:
-                    raise TransportError('Unknown transport: {}'.format(
-                        cfg['uri']))
+            # create thread-locals:
+            _context.top['config'] = cfg
+            _context.top['log'] = log
+            _context.top['state'] = {}
+            _context.top['info'] = InfoManager()
 
-                log.notice('Executing {} on {}'.format(module, cfg['uri']))
+            transport_cls = all_transports.get(cfg['uri'].transport, None)
+            if not transport_cls:
+                raise TransportError('Unknown transport: {}'.format(
+                    cfg['uri']))
 
-                # instantiate remote
-                transport = transport_cls()
-                _context.top['remote'] = transport
+            log.notice('Executing {} on {}'.format(module, cfg['uri']))
 
-                log.debug('Running {}'.format(active_mod.__file__))
-                active_mod.run()
-            except RemandError, e:
-                log.error(str(e))
-            finally:
-                _context.pop()
+            # instantiate remote
+            transport = transport_cls()
+            _context.top['remote'] = transport
+
+            log.debug('Running {}'.format(active_mod.__file__))
+            active_mod.run()
+        except RemandError, e:
+            log.error(str(e))
+        finally:
+            _context.pop()
 
 
 @click.group()

@@ -22,7 +22,7 @@ setup(
     packages=find_packages(exclude=['tests']),
     install_requires=['six',
                       'pluginbase',
-                      'click>=4.0',
+                      'click>=5.0',
                       'logbook',
                       'configparser>=3.5.0b2',
                       'stuf',

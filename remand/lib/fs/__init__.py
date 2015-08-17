@@ -3,7 +3,8 @@ import os
 
 from remand import remote, config, log
 from remand.exc import (ConfigurationError, RemoteFailureError,
-                        RemoteFileDoesNotExistError)
+                        RemoteFileDoesNotExistError,
+                        RemotePathIsNotADirectoryError)
 
 from remand.status import changed, unchanged
 
@@ -80,10 +81,46 @@ def remove_file(remote_path):
     try:
         remote.unlink(remote_path)
     except RemoteFileDoesNotExistError:
-        unchanged('File already gone: {}'.format(remote_path))
+        unchanged(u'File already gone: {}'.format(remote_path))
         return False
 
-    changed('Removed: {}'.format(remote_path))
+    changed(u'Removed: {}'.format(remote_path))
+    return True
+
+
+def remove_dir(remote_path, recursive=True):
+    """Removes a remote directory.
+
+    If the directory does not exist, does nothing.
+
+    :param recursive: Makes ``remove_dir`` behave closer to ``rm -rf`` instead
+                      of ``rmdir``.
+    """
+    st = remote.lstat(remote_path)
+
+    if st is None:
+        unchanged(u'Directory already gone: {}'.format(remote_path))
+        return False
+
+    # if it is not a directory, don't touch it
+    if not S_ISDIR(st.st_mode):
+        raise RemotePathIsNotADirectoryError(remote_path)
+
+    if recursive:
+        for entry in remote.listdir(remote_path):
+            fn = remote.path.join(remote_path, entry)
+
+            st = remote.lstat(fn)
+            if not st:
+                continue  # entry already disappeared
+
+            if S_ISDIR(st.st_mode):
+                remove_dir(fn, recursive)
+            else:
+                remove_file(fn)
+
+    remote.rmdir(remote_path)
+    changed(u'Removed directory: {}'.format(remote_path))
     return True
 
 

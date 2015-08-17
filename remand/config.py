@@ -1,4 +1,8 @@
-import configparser
+import sys
+if sys.version_info.major < 3:
+    from backports.configparser import ConfigParser
+else:
+    from configparser import ConfigParser
 import os
 import re
 
@@ -29,7 +33,7 @@ def load_configuration(app_name, configfiles=[]):
 
     fns.extend(configfiles)
 
-    cfg = configparser.ConfigParser(allow_no_value=True)
+    cfg = ConfigParser(allow_no_value=True)
     log.debug('Trying configuration files: {}'.format(fns))
     log.debug('Read configuration from {}'.format(cfg.read(fns)))
     return cfg

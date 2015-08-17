@@ -5,7 +5,7 @@ import logbook
 from logbook.more import ColorizedStderrHandler
 
 from . import _context
-from .config import HostRegistry, load_configuration
+from .configfiles import HostRegistry, load_configuration
 from .exc import RemandError, TransportError
 from .lib import InfoManager
 from .remotes.ssh import SSHRemote

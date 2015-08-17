@@ -124,6 +124,24 @@ def remove_dir(remote_path, recursive=True):
     return True
 
 
+def touch(remote_path):
+    """Update mtime and atime of a path.
+
+    Similar to running ``touch remote_path``.
+
+    :param remote_path: Remote path whose times will get updated.
+    :return: Since it always updates to the current time, calling this function
+             will always result in a modification.
+    """
+    # ensure the file exists
+    if not remote.lstat(remote_path):
+        with remote.file(remote_path, 'w') as out:
+            out.write('')
+
+    remote.utime(remote_path, None)
+    return True
+
+
 def upload_file(local_path, remote_path=None):
     """Uploads a local file to a remote and if does not exist or differs
     from the local version, uploads it.

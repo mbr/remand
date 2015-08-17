@@ -19,3 +19,10 @@ class TypeConversionMixin(object):
 
 class TypeConversionChainMap(TypeConversionMixin, ChainMap):
     pass
+
+
+def validate_umask(umask):
+    if not isinstance(umask, int):
+        raise ValueError('Not an integer umask: {}'.format(umask))
+    if umask > 0777:
+        raise ValueError('Invalid umask value: {}'.format(umask))

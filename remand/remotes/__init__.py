@@ -3,8 +3,6 @@ import shlex
 
 from six.moves import shlex_quote
 
-from ..exc import ConfigurationError
-
 
 def quote_args(args):
     return ' '.join(shlex_quote(arg) for arg in args)
@@ -30,10 +28,3 @@ class Project(object):
 
     def get_resource(self, parts):
         return os.path.join(self.basedir, *parts)
-
-
-def _validate_umask(umask):
-    if not isinstance(umask, int):
-        raise ConfigurationError('Not an integer umask: {}'.format(umask))
-    if umask > 0777:
-        raise ConfigurationError('Invalid umask value: {}'.format(umask))

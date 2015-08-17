@@ -32,11 +32,13 @@ def run(cmd, input=None, extra_env={}):
 
 
 @contextmanager
-def sudo(user=None, password=None, timestamp_timeout=2*60):
+def sudo(user=None, password=None, timestamp_timeout=2 * 60):
     if not isinstance(remote._get_current_object(), SSHRemote):
         raise NotImplementedError('sudo is only supported for SSH remotes.')
 
-    sudo_args = ['sudo', '--preserve-env', '--set-home', '--non-interactive']
+    # --preserve-env, --set-home and --non-interactive
+    # long options are not supported on older versions of sudo
+    sudo_args = ['sudo', '-E', '-H', '-n']
 
     if user:
         sudo_args.append('--user={}'.format(user))
@@ -56,12 +58,14 @@ def sudo(user=None, password=None, timestamp_timeout=2*60):
                 # and therefore not a security measure
                 prompt_cookie = hexlify(urandom(40))
                 log.debug('Prompt cookie for sudo refresh: {}'.format(
-                    prompt_cookie)
-                )
+                    prompt_cookie))
 
                 # we need to refresh the sudo timestamp
                 refresh_args = [
-                    'sudo', '--reset-timestamp', '--validate', '--stdin',
+                    'sudo',
+                    '-k',  # --reset-timestamp
+                    '-v',  # --validate
+                    '-S',  # --stdin
                     '--prompt={}'.format(prompt_cookie)
                 ]
 
@@ -87,16 +91,17 @@ def sudo(user=None, password=None, timestamp_timeout=2*60):
                 # FIXME: handle SFTP
 
         pargs = sudo_args[:]
+
         pargs.append('--')
         pargs.extend(args)
-        return orig_popen(pargs + ['--'], bufsize, extra_env)
+        return orig_popen(pargs, bufsize, extra_env)
 
     # monkey patch remote.sudo
     orig_popen = remote.popen
     remote.popen = sudo_popen
 
-    sftp_cmd = ' '.join([shlex_quote(part) for part in sudo_args]
-                        + [config['sftp_location']])
+    sftp_cmd = ' '.join([shlex_quote(part)
+                         for part in sudo_args] + [config['sftp_location']])
 
     # override sftp subsystem
     config['sftp_command'] = sftp_cmd

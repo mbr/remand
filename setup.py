@@ -27,6 +27,7 @@ setup(
                       'configparser>=3.5.0b2',
                       'stuf',
                       'werkzeug',
+                      'times',
                       'paramiko',  # needs our bugfix!
                       # chardet is a hidden dependency of python-debian
                       'python-debian',

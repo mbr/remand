@@ -16,9 +16,7 @@ from .uri import Uri
 from .utils import TypeConversionChainMap
 
 # medium-term, this could become a plugin-based solution, if there's need
-all_transports = {
-    'ssh': SSHRemote,
-}
+all_transports = {'ssh': SSHRemote, }
 
 # core logger
 log = logbook.Logger('remand')
@@ -83,14 +81,16 @@ class HostRegistry(object):
 
     def get_config_for_host(self, hostname):
         return TypeConversionChainMap(*[sect for exp, sect in self.host_res
-                                      if exp.match(hostname)])
+                                        if exp.match(hostname)])
 
 
 @click.command()
 @click.argument('module', type=click.Path(exists=True))
 @click.argument('uris', default=None, nargs=-1, callback=validate_uris)
-@click.option('configfiles', '--config', '-c', envvar='REMAND_CONFIG',
-              multiple=True, type=click.Path())
+@click.option('configfiles', '--config', '-c',
+              envvar='REMAND_CONFIG',
+              multiple=True,
+              type=click.Path())
 def remand(module, uris, configfiles):
     handler = ColorizedStderrHandler()
 
@@ -128,8 +128,7 @@ def remand(module, uris, configfiles):
                 transport_cls = all_transports.get(cfg['uri'].transport, None)
                 if not transport_cls:
                     raise TransportError('Unknown transport: {}'.format(
-                        cfg['uri'])
-                    )
+                        cfg['uri']))
 
                 log.notice('Executing {} on {}'.format(module, cfg['uri']))
 

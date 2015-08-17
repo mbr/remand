@@ -1,11 +1,9 @@
 import re
 
-
-URI_RE = re.compile(r'(?:(?P<transport>[a-zA-Z][a-zA-Z0-9]*)://)?' +
-                    r'(?:(?P<user>[^:@]+)(?::(?P<password>[^@]+))?@)?' +
-                    r'(?P<host>[^/:]*)' + r'(?::(?P<port>[0-9]+))?' +
-                    r'(?:(?P<path>/[^:]*))?' +
-                    r'$')
+URI_RE = re.compile(
+    r'(?:(?P<transport>[a-zA-Z][a-zA-Z0-9]*)://)?' +
+    r'(?:(?P<user>[^:@]+)(?::(?P<password>[^@]+))?@)?' + r'(?P<host>[^/:]*)' +
+    r'(?::(?P<port>[0-9]+))?' + r'(?:(?P<path>/[^:]*))?' + r'$')
 
 
 class Uri(object):

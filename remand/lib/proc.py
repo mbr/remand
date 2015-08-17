@@ -17,18 +17,18 @@ def _cmd_to_args(cmd):
     return shlex.split(cmd)
 
 
-def run(cmd, input=None, extra_env={}):
+def run(cmd, input=None, extra_env={}, status_ok=(0, )):
     args = _cmd_to_args(cmd)
 
     proc = remote.popen(args, extra_env=extra_env)
     stdout, stderr = proc.communicate(input)
 
-    if not proc.returncode == 0:
+    if not proc.returncode in status_ok:
         log.debug('stderr: {}'.format(stderr))
         raise RemoteFailureError('Remote command {} exited with exit status {}'
                                  .format(args, proc.returncode))
 
-    return stdout, stderr
+    return stdout, stderr, proc.returncode
 
 
 @contextmanager

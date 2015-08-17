@@ -10,11 +10,11 @@ from paramiko.sftp_client import SFTPClient
 from paramiko.ssh_exception import SSHException, BadHostKeyException
 from six.moves import shlex_quote
 
-from . import Remote, RemoteProcess, _validate_umask
+from . import _validate_umask
 from .. import config, log
+from .base import Remote, RemoteProcess
 from ..exc import (TransportError, RemoteFailureError,
                    RemoteFileDoesNotExistError)
-
 
 _KNOWN_HOSTS_ERROR = (
     "The host '{}' was not found in your known_hosts file. "
@@ -23,15 +23,13 @@ _KNOWN_HOSTS_ERROR = (
     "of a key-type mismatch.\n\n"
     "See https://github.com/paramiko/paramiko/pull/473 for more information.")
 
-
 _BAD_KEY_ERROR = (
+    # for extra drama, we copy the openssh error message:
     "The remote host's key does not match the key in your known_hosts file.\n"
-    # for extra drama, we copy the openssh error message
     "IT IS POSSIBLE THAT SOMEONE IS DOING SOMETHING NASTY!\n\n"
     "Remote host key: {} {}\n"
     "known_hosts key: {} {}\n\n"
-    "The host key for '{}' has changed and checking is enabled."
-)
+    "The host key for '{}' has changed and checking is enabled.")
 
 
 class WarnAutoAddPolicy(AutoAddPolicy):
@@ -39,29 +37,25 @@ class WarnAutoAddPolicy(AutoAddPolicy):
         log.warning('Missing hostkey for {} ignored (fingerprint is {}).'
                     .format(hostname, format_key(key)))
         return super(WarnAutoAddPolicy, self).missing_host_key(
-            client, hostname, key
-        )
+            client, hostname, key)
 
 
 class AskToAddPolicy(MissingHostKeyPolicy):
     _UNKNOWN_WARNING = (
         "The authenticity of host '{}' can't be established.\n"
-        "{} key fingerprint is {}."
-    )
+        "{} key fingerprint is {}.")
     _USER_PROMPT = "Are you sure you want to continue connecting?"
 
     def missing_host_key(self, client, hostname, key):
         click.echo(self._UNKNOWN_WARNING.format(
-            hostname, key.get_name(), format_key(key),
-        ))
+            hostname, key.get_name(), format_key(key), ))
         if not click.confirm(self._USER_PROMPT):
             raise TransportError('User declined to connect to unknown host')
 
 
 class AskToSavePolicy(AskToAddPolicy):
     _USER_PROMPT = (
-        "Are you sure you want to save to known_hosts and continue?"
-    )
+        "Are you sure you want to save to known_hosts and continue?")
 
     def missing_host_key(self, client, hostname, key):
         super(AskToSavePolicy, self).missing_host_key(client, hostname, key)
@@ -72,8 +66,7 @@ class AskToSavePolicy(AskToAddPolicy):
         if client._host_keys_filename is not None:
             client.save_host_keys(client._host_keys_filename)
             log.info('Added {} host key for {}: {}'.format(
-                key.get_name(), hostname, format_key(key)
-            ))
+                key.get_name(), hostname, format_key(key)))
         else:
             log.warning('Did not save host, no known_hosts file loaded.')
 
@@ -97,6 +90,7 @@ def wrap_ssh_errors(f):
         except SSHException, e:
             raise TransportError('SSH ({}): {}'.format(
                 type(e).__name__, e.message))
+
     return _
 
 
@@ -107,13 +101,13 @@ def wrap_sftp_errors(f):
             return f(*args, **kwargs)
         except IOError, e:
             fargs = ', '.join(
-                map(repr, args[1:])
-                + ['{}={!r}'.format(*v) for v in kwargs.items()]
-            )
+                map(repr, args[1:]) + ['{}={!r}'.format(*v)
+                                       for v in kwargs.items()])
             if e.errno == 2:
                 raise RemoteFileDoesNotExistError(str(e))
             raise RemoteFailureError('SFTP Failed {}({}): {}'.format(
                 f.__name__, fargs, str(e)))
+
     return wrap_ssh_errors(_)
 
 
@@ -220,17 +214,12 @@ class SSHRemote(Remote):
                                  password=uri.password)
         except BadHostKeyException, e:
             raise TransportError(_BAD_KEY_ERROR.format(
-                e.key.get_name(),
-                format_key(e.key),
-                e.expected_key.get_name(),
-                format_key(e.expected_key),
-                ssh_host_name(uri),
-            ))
+                e.key.get_name(), format_key(e.key), e.expected_key.get_name(),
+                format_key(e.expected_key), ssh_host_name(uri), ))
         except SSHException, e:
             if 'not found in known_hosts' in e.message:
                 raise TransportError(_KNOWN_HOSTS_ERROR.format(
-                    ssh_host_name(uri))
-                )
+                    ssh_host_name(uri)))
             raise
 
         log.info('SSH connection established')
@@ -329,8 +318,7 @@ class SSHRemote(Remote):
         return SSHRemoteProcess(
             stdin=_ShutdownWrap(stdin, 1),
             stdout=_ShutdownWrap(stdout, 0),
-            stderr=_ShutdownWrap(stderr, 0),
-        )
+            stderr=_ShutdownWrap(stderr, 0), )
 
     @wrap_sftp_errors
     def rmdir(self, path):

@@ -234,8 +234,13 @@ class SSHRemote(Remote):
             raise
 
         log.info('SSH connection established')
+
+        # verify umask
         log.debug('Verifying umask')
-        um, _ = self.popen(['sh', '-c', 'umask']).communicate()
+        p_umask = self.popen(['sh', '-c', 'umask'])
+        um, _ = p_umask.communicate()
+        assert p_umask.returncode == 0
+
         umask = int(um.strip(), 8)
         expected_umask = int(config['reset_umask'], 8)
         if not umask == int(config['reset_umask'], 8):

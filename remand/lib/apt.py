@@ -77,7 +77,7 @@ def update(max_age=60 * 60):
 
 
 @operation()
-def query_packages(pkgs):
+def query_cache(pkgs):
     stdout, _, _ = proc.run(['apt-cache', 'show'] + list(pkgs))
     pkgs = OrderedDict()
     for dump in stdout.split('\n\n'):

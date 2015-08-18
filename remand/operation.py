@@ -9,7 +9,7 @@ def operation():
     def wrapper(f):
         @wraps(f)
         def _(*args, **kwargs):
-            log.debug('starting: {}'.format(f.__name__))
+            log.debug('{}: start'.format(f.__name__))
             try:
                 rv = f(*args, **kwargs)
                 if isinstance(rv, OperationResult):
@@ -23,9 +23,9 @@ def operation():
             if isinstance(result, Failed):
                 log.error(str(result.exc))
             elif isinstance(result, Changed):
-                log.info(result.msg or 'changed: {}'.format(f.__name__))
+                log.info(result.msg or '{}: changed'.format(f.__name__))
             elif isinstance(result, Unchanged):
-                log.debug(result.msg or 'unchanged: {}'.format(f.__name__))
+                log.debug(result.msg or '{}: unchanged'.format(f.__name__))
 
             if isinstance(result, Failed):
                 result._reraise()

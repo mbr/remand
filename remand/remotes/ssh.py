@@ -2,6 +2,7 @@ from binascii import hexlify
 from functools import wraps
 from threading import Thread
 import os
+import time
 
 import click
 from future.utils import raise_from
@@ -241,6 +242,26 @@ class SSHRemote(Remote):
             log.warning('Host has unexpected umask of {:03o} (instead of '
                         '{:03o}). Things might not work as you expect.'
                         .format(umask, expected_umask))
+
+        # verify time
+        max_diff = config['max_time_diff']
+
+        if max_diff >= 0:
+            local_timestamp = int(time.time())
+            p_ts = self.popen(['date', '+%s'])
+            try:
+                ts, _ = p_ts.communicate()
+            except IOError as e:
+                log.warning(
+                    'Could not verify remote time. '
+                    'Is the date binary missing?')
+            timestamp = int(ts)
+            time_diff = timestamp - local_timestamp
+            log.debug('Local time: {} Remote time: {} Diff: {}'.format(
+                local_timestamp, timestamp, time_diff))
+            if time_diff > max_diff:
+                log.warning('Remote time differs by {} seconds (limit: {})'
+                            .format(time_diff, max_diff))
 
     @property
     def _sftp(self):

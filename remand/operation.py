@@ -9,6 +9,7 @@ def operation():
     def wrapper(f):
         @wraps(f)
         def _(*args, **kwargs):
+            log.debug('starting: {}'.format(f.__name__))
             try:
                 rv = f(*args, **kwargs)
                 if isinstance(rv, OperationResult):

@@ -80,11 +80,17 @@ def query_packages(*pkgs):
     return pkgs
 
 
-def install_packages(*pkgs):
+def install_packages(pkgs):
     proc.run(
-        ['apt-get', 'install', '--quiet', '--yes', '--option',
-         'Dpkg::Options::="--force-confdef"', '--option',
-         'Dpkg::Options::="--force-confold"'] + list(pkgs),
+        ['apt-get',
+         'install',
+         '--quiet',
+         '--yes',  # options below don't work. why?
+  #'--option', 'Dpkg::Options::="--force-confdef"',
+  #'--option', 'Dpkg::Options::="--force-confold"'
+         ] + list(pkgs),
         extra_env={
             'DEBIAN_FRONTEND': 'noninteractive',
         })
+    changed('Installed {}'.format(' '.join(pkgs)))
+    return True  # FIXME: detect if packages were installed?

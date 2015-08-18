@@ -46,10 +46,10 @@ def memoize(key=None):
             sig = (name, ) + args
             if config.get_bool('info_cache') and sig in info.cache:
                 v = info.cache[sig]
-                log.debug('Memoize cache hit ({}): {}'.format(sig, v))
+                log.debug('Memoize cache hit {}'.format(sig))
             else:
                 v = f(*args)
-                log.debug('Memoize cache miss ({}): {}'.format(sig, v))
+                log.debug('Memoize cache miss {}'.format(sig))
                 info.cache[sig] = v
             return v
 

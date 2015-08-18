@@ -112,5 +112,8 @@ def install_packages(pkgs, check_first=True):
             'DEBIAN_FRONTEND': 'noninteractive',
         })
 
+    # FIXME: make this a decorator for info, add "change_invalides" decorator?
+    info_installed_packages.invalidate_cache()
+
     # FIXME: detect if packages were installed?
     return Changed(msg='Installed {}'.format(' '.join(pkgs)))

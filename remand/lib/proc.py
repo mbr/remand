@@ -38,7 +38,7 @@ def sudo(user=None, password=None, timestamp_timeout=2 * 60):
 
     # --preserve-env, --set-home and --non-interactive
     # long options are not supported on older versions of sudo
-    sudo_args = ['sudo', '-E', '-H', '-n']
+    sudo_args = [config['cmd_sudo'], '-E', '-H', '-n']
 
     if user:
         sudo_args.append('--user={}'.format(user))
@@ -62,7 +62,7 @@ def sudo(user=None, password=None, timestamp_timeout=2 * 60):
 
                 # we need to refresh the sudo timestamp
                 refresh_args = [
-                    'sudo',
+                    config['cmd_sudo'],
                     '-k',  # --reset-timestamp
                     '-v',  # --validate
                     '-S',  # --stdin

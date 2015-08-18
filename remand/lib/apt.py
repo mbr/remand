@@ -2,7 +2,7 @@ from collections import OrderedDict, namedtuple
 from datetime import datetime, timedelta
 
 from debian.deb822 import Deb822
-from remand import log, remote
+from remand import log, remote, config
 from remand.exc import RemoteFailureError
 from remand.lib import proc, memoize, fs
 from remand.operation import operation, Unchanged, Changed
@@ -45,7 +45,7 @@ def info_last_upgrade():
 
 @memoize()
 def info_installed_packages():
-    stdout, _, _ = proc.run(['dpkg-query', '--show'])
+    stdout, _, _ = proc.run([config['cmd_dpkg_query'], '--show'])
 
     pkgs = {}
 
@@ -67,7 +67,7 @@ def update(max_age=60 * 60):
                 msg='apt cache is only {:.0f} minutes old, not updating'
                 .format(current_age.total_seconds() / 60))
 
-    proc.run(['apt-get', 'update'])
+    proc.run([config['cmd_apt_get'], 'update'])
 
     # modify update stamp
     fs.touch(_get_remand_update_stamp())
@@ -78,7 +78,7 @@ def update(max_age=60 * 60):
 
 @operation()
 def query_cache(pkgs):
-    stdout, _, _ = proc.run(['apt-cache', 'show'] + list(pkgs))
+    stdout, _, _ = proc.run([config['cmd_apt_cache'], 'show'] + list(pkgs))
     pkgs = OrderedDict()
     for dump in stdout.split('\n\n'):
         # skip empty lines
@@ -101,7 +101,7 @@ def install_packages(pkgs, check_first=True):
         return Unchanged(msg='Already installed: {}'.format(' '.join(pkgs)))
 
     proc.run(
-        ['apt-get',
+        [config['cmd_apt_get'],
          'install',
          '--quiet',
          '--yes',  # options below don't work. why?

@@ -1,10 +1,11 @@
+from remand import config
 from remand.lib import proc
 from remand.lib import memoize
 
 
 @memoize()
 def _get_lsb_info():
-    stdout, stderr = proc.run(['lsb_release', '--all', '--short'])
+    stdout, stderr = proc.run([config['cmd_lsb_release'], '--all', '--short'])
     lines = stdout.splitlines()
     return {
         'dist_id': lines[0],

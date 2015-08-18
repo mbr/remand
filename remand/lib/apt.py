@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 from datetime import datetime, timedelta
 
 from debian.deb822 import Deb822
@@ -7,6 +7,8 @@ from remand.exc import RemoteFailureError
 from remand.lib import proc, memoize, fs
 from remand.operation import operation, Unchanged, Changed
 import times
+
+PackageRecord = namedtuple('PackageRecord', 'name,version')
 
 
 def _timestamp_to_datetime(rfn):
@@ -39,6 +41,19 @@ def info_last_update():
 def info_last_upgrade():
     # note: may be inaccurate, if the necessary hooks are not set
     return _timestamp_to_datetime('/var/lib/apt/periodic/upgrade-stamp')
+
+
+@memoize()
+def info_installed_packages():
+    stdout, _, _ = proc.run(['dpkg-query', '--show'])
+
+    pkgs = {}
+
+    for line in stdout.splitlines():
+        rec = PackageRecord(*line.split('\t'))
+        pkgs[rec.name] = rec
+
+    return pkgs
 
 
 @operation()

@@ -42,7 +42,7 @@ def info_last_upgrade():
 
 
 @operation()
-def update(max_age=15 * 60):
+def update(max_age=60 * 60):
     now = times.now()
 
     if max_age:

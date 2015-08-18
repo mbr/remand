@@ -32,8 +32,7 @@ class InfoManager(object):
 
         if func is None:
             raise ConfigurationError('Missing callable {} in {}'.format(
-                funcname, modname
-            ))
+                funcname, modname))
 
         return func()
 
@@ -44,7 +43,7 @@ def memoize(key=None):
 
         @wraps(f)
         def _(*args):
-            sig = (name,) + args
+            sig = (name, ) + args
             if config.get_bool('info_cache') and sig in info.cache:
                 v = info.cache[sig]
                 log.debug('Memoize cache hit ({}): {}'.format(sig, v))

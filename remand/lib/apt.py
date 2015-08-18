@@ -96,7 +96,10 @@ def query_cache(pkgs):
 
 
 @operation()
-def install_packages(pkgs):
+def install_packages(pkgs, check_first=True):
+    if check_first and set(pkgs) < set(info_installed_packages().keys()):
+        return Unchanged(msg='Already installed: {}'.format(' '.join(pkgs)))
+
     proc.run(
         ['apt-get',
          'install',

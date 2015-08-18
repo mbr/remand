@@ -19,11 +19,11 @@ def operation():
                 result = Failed(e)
 
             # log results
-            if isinstance(Failed, result):
+            if isinstance(result, Failed):
                 log.error(str(result.exc))
-            elif isinstance(Changed, result):
+            elif isinstance(result, Changed):
                 log.info(result.msg or 'changed: {}'.format(f.__name__))
-            elif isinstance(Unchanged, result):
+            elif isinstance(result, Unchanged):
                 log.debug(result.msg or 'unchanged: {}'.format(f.__name__))
 
             if isinstance(result, Failed):

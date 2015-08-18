@@ -132,7 +132,10 @@ class SSHRemoteProcess(RemoteProcess):
 
     def communicate(self, input=None):
         def read_thread(src, buffer):
-            buffer.append(src.read())
+            try:
+                buffer.append(src.read())
+            except Exception as e:
+                buffer.append(e)
 
         stdout = []
         stderr = []
@@ -159,6 +162,13 @@ class SSHRemoteProcess(RemoteProcess):
         self.stderr.close()
 
         self.wait()
+
+        if isinstance(stdout[0], Exception):
+            raise stdout[0]
+
+        if isinstance(stderr[0], Exception):
+            raise stderr[0]
+
         return (stdout[0], stderr[0])
 
 

@@ -24,6 +24,7 @@ def run(cmd, input=None, extra_env={}, status_ok=(0, )):
     stdout, stderr = proc.communicate(input)
 
     if not proc.returncode in status_ok:
+        log.debug('stdout: {}'.format(stdout))
         log.debug('stderr: {}'.format(stderr))
         raise RemoteFailureError('Remote command {} exited with exit status {}'
                                  .format(args, proc.returncode))

@@ -3,9 +3,9 @@ from datetime import datetime, timedelta
 
 from debian.deb822 import Deb822
 from remand import log, remote
-from remand.status import changed, unchanged
 from remand.exc import RemoteFailureError
 from remand.lib import proc, memoize, fs
+from remand.operation import operation, Unchanged, Changed
 import times
 
 
@@ -41,16 +41,16 @@ def info_last_upgrade():
     return _timestamp_to_datetime('/var/lib/apt/periodic/upgrade-stamp')
 
 
+@operation()
 def update(max_age=15 * 60):
     now = times.now()
 
     if max_age:
         current_age = now - info_last_update()
         if current_age < timedelta(seconds=max_age):
-            unchanged(
-                'apt cache is only {:.0f} minutes old, not updating'.format(
-                    current_age.total_seconds() / 60))
-            return False
+            return Unchanged(
+                msg='apt cache is only {:.0f} minutes old, not updating'
+                .format(current_age.total_seconds() / 60))
 
     proc.run(['apt-get', 'update'])
 
@@ -58,10 +58,10 @@ def update(max_age=15 * 60):
     fs.touch(_get_remand_update_stamp())
     info_last_update.update_cache(datetime.utcnow())
 
-    changed('Updated apt cache')
-    return True
+    return Changed(msg='apt cache updated')
 
 
+@operation()
 def query_packages(*pkgs):
     stdout, stderr = proc.run(['apt-cache', 'show'] + list(pkgs))
     pkgs = OrderedDict()
@@ -77,20 +77,22 @@ def query_packages(*pkgs):
 
         pkgs[pkg_info['Package']] = pkg_info
 
-    return pkgs
+    return Unchanged(pkgs)
 
 
+@operation()
 def install_packages(pkgs):
     proc.run(
         ['apt-get',
          'install',
          '--quiet',
          '--yes',  # options below don't work. why?
-  #'--option', 'Dpkg::Options::="--force-confdef"',
-  #'--option', 'Dpkg::Options::="--force-confold"'
+         #'--option', 'Dpkg::Options::="--force-confdef"',
+         #'--option', 'Dpkg::Options::="--force-confold"'
          ] + list(pkgs),
         extra_env={
             'DEBIAN_FRONTEND': 'noninteractive',
         })
-    changed('Installed {}'.format(' '.join(pkgs)))
-    return True  # FIXME: detect if packages were installed?
+
+    # FIXME: detect if packages were installed?
+    return Changed(msg='Installed {}'.format(' '.join(pkgs)))

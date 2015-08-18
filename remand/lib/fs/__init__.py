@@ -6,7 +6,7 @@ from remand.exc import (ConfigurationError, RemoteFailureError,
                         RemoteFileDoesNotExistError,
                         RemotePathIsNotADirectoryError)
 
-from remand.status import changed, unchanged
+from remand.operation import operation, Changed, Unchanged
 
 from .verify import Verifier
 from .upload import Uploader
@@ -48,6 +48,7 @@ def _expand_remote_dest(local_path, remote_path):
     return st, remote_path
 
 
+@operation()
 def create_dir(path, mode=0777):
     """Ensure that a directory exists at path. Parent directories are created
     if needed.
@@ -66,13 +67,12 @@ def create_dir(path, mode=0777):
             # create parent directories
             create_dir(head, mode)
         remote.mkdir(npath, mode)
-        changed('Created directory: {}'.format(path))
-        return True
+        return Changed(msg='Created directory: {}'.format(path))
 
-    unchanged('Already exists: {}'.format(path))
-    return False
+    return Unchanged('Already exists: {}'.format(path))
 
 
+@operation()
 def remove_file(remote_path):
     """Removes a remote file, as long as it is a file or a symbolic link.
 
@@ -81,13 +81,12 @@ def remove_file(remote_path):
     try:
         remote.unlink(remote_path)
     except RemoteFileDoesNotExistError:
-        unchanged(u'File already gone: {}'.format(remote_path))
-        return False
+        return Unchanged(msg=u'File already gone: {}'.format(remote_path))
 
-    changed(u'Removed: {}'.format(remote_path))
-    return True
+    return Changed(msg=u'Removed: {}'.format(remote_path))
 
 
+@operation()
 def remove_dir(remote_path, recursive=True):
     """Removes a remote directory.
 
@@ -99,8 +98,7 @@ def remove_dir(remote_path, recursive=True):
     st = remote.lstat(remote_path)
 
     if st is None:
-        unchanged(u'Directory already gone: {}'.format(remote_path))
-        return False
+        return Unchanged(msg=u'Directory already gone: {}'.format(remote_path))
 
     # if it is not a directory, don't touch it
     if not S_ISDIR(st.st_mode):
@@ -120,10 +118,10 @@ def remove_dir(remote_path, recursive=True):
                 remove_file(fn)
 
     remote.rmdir(remote_path)
-    changed(u'Removed directory: {}'.format(remote_path))
-    return True
+    return Changed(msg=u'Removed directory: {}'.format(remote_path))
 
 
+@operation()
 def touch(remote_path):
     """Update mtime and atime of a path.
 
@@ -139,9 +137,10 @@ def touch(remote_path):
             out.write('')
 
     remote.utime(remote_path, None)
-    return True
+    return Changed(msg=u'Touched {}'.format(remote_path))
 
 
+@operation()
 def upload_file(local_path, remote_path=None):
     """Uploads a local file to a remote and if does not exist or differs
     from the local version, uploads it.
@@ -175,13 +174,12 @@ def upload_file(local_path, remote_path=None):
             times = (lst.st_mtime, lst.st_mtime)
             remote.utime(remote_path, times)
             log.debug('Updated atime/mtime: {}'.format(times))
-        changed('Upload {} -> {}'.format(local_path, remote_path))
-        return True
+        return Changed(msg='Upload {} -> {}'.format(local_path, remote_path))
 
-    unchanged('File up-to-date: {}'.format(remote_path))
-    return False
+    return Unchanged(msg='File up-to-date: {}'.format(remote_path))
 
 
+@operation()
 def upload_string(buf, remote_path):
     """Similar to :func:`~remand.lib.fs.upload_file`, but uploads a
     buffer instead of a file-like object.
@@ -198,8 +196,7 @@ def upload_string(buf, remote_path):
 
     if not st or not verifier.verify_buffer(st, buf, remote_path):
         uploader.upload_buffer(buf, remote_path)
-        changed('Upload buffer ({}) -> {}'.format(len(buf), remote_path))
-        return True
+        return Changed(
+            msg='Upload buffer ({}) -> {}'.format(len(buf), remote_path))
 
-    unchanged('File up-to-date: {}'.format(remote_path))
-    return False
+    return Unchanged(msg='File up-to-date: {}'.format(remote_path))

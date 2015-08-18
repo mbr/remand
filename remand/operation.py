@@ -39,9 +39,9 @@ def operation():
 class OperationResult(object):
     changed = None
 
-    def __init__(self, value=None, message=None):
+    def __init__(self, value=None, msg=None):
         self._value = value
-        self.message = message
+        self.msg = msg
 
     @property
     def value(self):
@@ -52,7 +52,7 @@ class OperationResult(object):
 
     def __repr__(self):
         return '{}({!r}, {!r})'.format(self.__class__.__name__, self._value,
-                                       self.message)
+                                       self.msg)
 
 
 class Changed(OperationResult):
@@ -66,7 +66,7 @@ class Unchanged(OperationResult):
 class Failed(OperationResult):
     def __init__(self, exc):
         self.exc = exc
-        self.message = str(exc)
+        self.msg = str(exc)
 
     def value(self):
         self._reraise()

@@ -23,19 +23,19 @@ def test_harmless_operation():
 
     assert isinstance(val, Unchanged)
     assert val.value is None
-    assert val.message is None
+    assert val.msg is None
 
 
-def test_harmless_operation_with_message():
+def test_harmless_operation_with_msg():
     @operation()
     def does_nothing():
-        return Unchanged(message='test')
+        return Unchanged(msg='test')
 
     val = does_nothing()
 
     assert isinstance(val, Unchanged)
     assert val.value is None
-    assert val.message == 'test'
+    assert val.msg == 'test'
 
 
 def test_harmless_operation_with_value():
@@ -47,10 +47,10 @@ def test_harmless_operation_with_value():
 
     assert isinstance(val, Unchanged)
     assert val.value is 'four'
-    assert val.message is None
+    assert val.msg is None
 
 
-def test_harmless_operation_with_value_and_message():
+def test_harmless_operation_with_value_and_msg():
     @operation()
     def does_nothing():
         return Unchanged('four', 'test')
@@ -59,7 +59,7 @@ def test_harmless_operation_with_value_and_message():
 
     assert isinstance(val, Unchanged)
     assert val.value is 'four'
-    assert val.message == 'test'
+    assert val.msg == 'test'
 
 
 def test_changing_operation():
@@ -71,19 +71,19 @@ def test_changing_operation():
 
     assert isinstance(val, Changed)
     assert val.value is None
-    assert val.message is None
+    assert val.msg is None
 
 
-def test_changing_operation_with_message():
+def test_changing_operation_with_msg():
     @operation()
     def does_nothing():
-        return Changed(message='test')
+        return Changed(msg='test')
 
     val = does_nothing()
 
     assert isinstance(val, Changed)
     assert val.value is None
-    assert val.message == 'test'
+    assert val.msg == 'test'
 
 
 def test_changing_operation_with_value():
@@ -95,10 +95,10 @@ def test_changing_operation_with_value():
 
     assert isinstance(val, Changed)
     assert val.value is 'four'
-    assert val.message is None
+    assert val.msg is None
 
 
-def test_changing_operation_with_value_and_message():
+def test_changing_operation_with_value_and_msg():
     @operation()
     def does_nothing():
         return Changed('four', 'test')
@@ -107,7 +107,7 @@ def test_changing_operation_with_value_and_message():
 
     assert isinstance(val, Changed)
     assert val.value is 'four'
-    assert val.message == 'test'
+    assert val.msg == 'test'
 
 
 def test_failure_operation_raises():

@@ -54,8 +54,13 @@ def memoize(key=None):
             return v
 
         def update_cache(value, *args):
-            sig = (name,) + args
+            sig = (name, ) + args
             info.cache[sig] = value
+
+        def invalidate_cache(*args):
+            sig = (name, ) + args
+            if sig in info.cache[sig]:
+                del info.cache[sig]
 
         _.update_cache = update_cache
         return _

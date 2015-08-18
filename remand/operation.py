@@ -1,5 +1,9 @@
 from functools import wraps
 
+import logbook
+
+log = logbook.Logger('op')
+
 
 def operation():
     def wrapper(f):
@@ -13,6 +17,14 @@ def operation():
                     result = Unchanged(value=rv)
             except Exception as e:
                 result = Failed(e)
+
+            # log results
+            if isinstance(Failed, result):
+                log.error(str(result.exc))
+            elif isinstance(Changed, result):
+                log.info(result.msg or 'changed: {}'.format(f.__name__))
+            elif isinstance(Unchanged, result):
+                log.debug(result.msg or 'unchanged: {}'.format(f.__name__))
 
             if isinstance(result, Failed):
                 result._reraise()

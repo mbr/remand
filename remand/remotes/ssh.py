@@ -251,7 +251,7 @@ class SSHRemote(Remote):
         # verify time
         max_diff = config['max_time_diff']
 
-        if max_diff >= 0:
+        if max_diff is not None:
             local_timestamp = int(time.time())
             p_ts = self.popen(['date', '+%s'])
             try:

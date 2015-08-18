@@ -62,8 +62,8 @@ def update(max_age=60 * 60):
 
 
 @operation()
-def query_packages(*pkgs):
-    stdout, stderr = proc.run(['apt-cache', 'show'] + list(pkgs))
+def query_packages(pkgs):
+    stdout, _, _ = proc.run(['apt-cache', 'show'] + list(pkgs))
     pkgs = OrderedDict()
     for dump in stdout.split('\n\n'):
         # skip empty lines

@@ -12,27 +12,6 @@ class OperationResult(object):
     def value(self):
         return self._value
 
-    @classmethod
-    def from_rv(self, val):
-        if not isinstance(val, (tuple, list)):
-            val = (val, )
-
-        return self._from_rv(*val)
-
-    @classmethod
-    def _from_rv(self, result_type, value=None, msg=None):
-        if isinstance(result_type, OperationResult):
-            return result_type
-
-        if result_type is True:
-            return Changed(value, msg)
-
-        if result_type is False or result_type is None:
-            return Unchanged(value, msg)
-
-        raise ValueError(
-            'Operation returned invalid result: {}'.format(result_type))
-
     def __str__(self):
         return repr(self)
 
@@ -66,7 +45,11 @@ def operation():
         @wraps(f)
         def _(*args, **kwargs):
             try:
-                result = OperationResult.from_rv(f(*args, **kwargs))
+                rv = f(*args, **kwargs)
+                if isinstance(rv, OperationResult):
+                    result = rv
+                else:
+                    result = Unchanged(value=rv)
             except Exception as e:
                 result = Failed(e)
 
@@ -78,18 +61,22 @@ def operation():
 
 
 @operation()
-def install_foobar(fail=None, change=None, success=None):
-    if fail:
-        raise RuntimeError('failed due to {}'.format(fail))
+def return_four(fail_because=None, change=None):
+    if fail_because:
+        raise RuntimeError('failed due to {}'.format(fail_because))
 
     if change:
-        return True, change
+        return Changed(4, change)
 
-    if success:
-        return False, success, 'Great success'
-
-    return False
+    return 4
 
 
-def test_foo():
-    pass
+def test_harmless_operation():
+    @operation()
+    def does_nothing():
+        pass
+
+    val = does_nothing()
+
+    assert isinstance(val, Unchanged)
+    assert val.value is None

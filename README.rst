@@ -1,6 +1,10 @@
 remand
 ======
 
+.. warning:: At this point, remand is under heavy development. Use at your own
+             risk (and give plenty of feedback)!
+
+
 remand is a tool to configure any kind of *nix machine automatically. It allows
 you to provision servers, configure your desktop machine or customize a
 RaspberryPi SD-card image. Here's an example::

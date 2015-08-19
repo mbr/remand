@@ -1,7 +1,9 @@
 remand
 ======
 
-.. warning:: At this point, remand is under heavy development. Use at your own
+.. warning:: At this point, remand is under heavy development. Documentation
+             may be out of date, things might break and API may be gone
+             the next morning and not call you back. Use at your own
              risk (and give plenty of feedback)!
 
 

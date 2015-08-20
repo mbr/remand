@@ -21,7 +21,7 @@ def operation():
 
             # log results
             if isinstance(result, Failed):
-                log.error(str(result.exc))
+                log.exception(result.exc)
             elif isinstance(result, Changed):
                 log.info(result.msg or '{}: changed'.format(f.__name__))
             elif isinstance(result, Unchanged):

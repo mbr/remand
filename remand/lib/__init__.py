@@ -63,6 +63,7 @@ def memoize(key=None):
                 del info.cache[sig]
 
         _.update_cache = update_cache
+        _.invalidate_cache = invalidate_cache
         return _
 
     return wrapper

@@ -1,5 +1,5 @@
 from binascii import hexlify
-from functools import wraps
+from functools import wraps, partial
 from threading import Thread
 import os
 import time
@@ -150,9 +150,16 @@ class SSHRemoteProcess(RemoteProcess):
         stdout_thread.start()
         stderr_thread.start()
 
+        bufsize = int(config['buffer_size'])
         if input is not None:
-            self.stdin.write(input)
-            log.debug('communicate: Input sent')
+            if hasattr(input, 'read'):
+                for chunk in iter(partial(input.read, bufsize), ''):
+                    self.stdin.write(chunk)
+                log.debug('communicate: Chunk sent')
+            else:
+                log.debug('communicate: Input sent')
+                self.stdin.write(input)
+
         self.stdin.close()
 
         # wait for stdout/stderr to finish

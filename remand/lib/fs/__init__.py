@@ -49,6 +49,12 @@ def _expand_remote_dest(local_path, remote_path):
 
 
 @operation()
+def chown(remote_path, uid=None, gid=None, recursive=False):
+    # FIXME: Create remote_walk
+    pass
+
+
+@operation()
 def create_dir(path, mode=0777):
     """Ensure that a directory exists at path. Parent directories are created
     if needed.
@@ -105,19 +111,13 @@ def remove_dir(remote_path, recursive=True):
         raise RemotePathIsNotADirectoryError(remote_path)
 
     if recursive:
-        for entry in remote.listdir(remote_path):
-            fn = remote.path.join(remote_path, entry)
+        for dirpath, dirnames, filenames in walk(remote_path, topdown=False):
+            for fn in filenames:
+                remote.unlink(remote.path.join(dirpath, fn))
+            remote.rmdir(dirpath)
+    else:
+        remote.rmdir(dirpath)
 
-            st = remote.lstat(fn)
-            if not st:
-                continue  # entry already disappeared
-
-            if S_ISDIR(st.st_mode):
-                remove_dir(fn, recursive)
-            else:
-                remove_file(fn)
-
-    remote.rmdir(remote_path)
     return Changed(msg=u'Removed directory: {}'.format(remote_path))
 
 

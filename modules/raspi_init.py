@@ -2,11 +2,11 @@ import os
 
 from remand import log, remote
 from remand.lib import proc, fs
-from remand.status import changed, unchanged
-
-PUB_KEY = os.path.expanduser('~/.ssh/id_rsa.pub')
+from remand.operation import Changed, Unchanged
 
 from collections import namedtuple
+
+PUB_KEY = os.path.expanduser('~/.ssh/id_rsa.pub')
 
 UserEntry = namedtuple('UserEntry', 'name,pw,uid,gid,gecos,home,shell')
 
@@ -15,7 +15,7 @@ def disable_raspi_config():
     c = False
 
     # we need to remove it from profile.d
-    c |= fs.remove_file('/etc/profile.d/raspi-config.sh')
+    c |= fs.remove_file('/etc/profile.d/raspi-config.sh').changed
 
     # FIXME: this should become part of an edit module?
     lines = []
@@ -46,11 +46,9 @@ def disable_raspi_config():
         c = True
 
     if c:
-        changed('Disabled raspi-config')
-        return True
+        return Changed(msg='Disabled raspi-config')
     else:
-        unchanged('raspi-config already stopped and disabled')
-        return False
+        return Unchanged(msg='raspi-config already stopped and disabled')
 
 
 def register_public_key():
@@ -58,20 +56,17 @@ def register_public_key():
     c = False
 
     if remote.stat('/home/pi'):
-        c |= fs.create_dir('/home/pi/.ssh')
-        c |= fs.upload_file(PUB_KEY, '/home/pi/.ssh/authorized_keys')
-        changed('Registered ssh key on root')
+        c |= fs.create_dir('/home/pi/.ssh').changed
+        c |= fs.upload_file(PUB_KEY, '/home/pi/.ssh/authorized_keys').changed
 
     with proc.sudo():
-        c |= fs.create_dir('/root/.ssh')
-        c |= fs.upload_file(PUB_KEY, '/root/.ssh/authorized_keys')
-        changed('Registered ssh key on root')
+        c |= fs.create_dir('/root/.ssh').changed
+        c |= fs.upload_file(PUB_KEY, '/root/.ssh/authorized_keys').changed
 
     if c:
-        return True
+        return Changed(msg='Set up SSH keys')
     else:
-        unchanged('SSH already setup correctly')
-        return False
+        Unchanged(msg='SSH key already setup correctly')
 
 
 def expand_root_fs():
@@ -81,12 +76,11 @@ def expand_root_fs():
     free_space = (int(dev_size) - int(p1_size) - int(p2_size)) * 512
 
     if free_space <= 4 * 1024 * 1024:
-        unchanged('Free space is <= 4M. Not expanding root filesystem')
-        return False
+        return Unchanged(
+            msg='Free space is <= 4M. Not expanding root filesystem')
     else:
-        changed('Expanded root filesystem')
         proc.run(['raspi-config', '--expand-rootfs'])
-    return True
+        return Changed(msg='Expanded root filesystem')
 
 
 def reboot():
@@ -113,11 +107,9 @@ def deluser(name, remove_home=True):
 
     if c:
         fs.upload_string(''.join(lines), '/etc/passwd')
-        changed('Removed user pi')
-        return True
+        return Changed(msg='Removed user pi')
     else:
-        unchanged('User pi already gone')
-        return False
+        return Unchanged(msg='User pi already gone')
 
 
 def run():
@@ -126,5 +118,5 @@ def run():
         deluser('pi')
         disable_raspi_config()
 
-        if expand_root_fs():
+        if expand_root_fs().changed:
             reboot()

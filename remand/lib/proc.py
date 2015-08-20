@@ -17,17 +17,30 @@ def _cmd_to_args(cmd):
     return shlex.split(cmd)
 
 
-def run(cmd, input=None, extra_env={}, status_ok=(0, )):
+# FIXME: this should be an operation?
+def run(cmd, input=None, extra_env={}, status_ok=(0, ), status_meaning={}):
     args = _cmd_to_args(cmd)
 
     proc = remote.popen(args, extra_env=extra_env)
     stdout, stderr = proc.communicate(input)
 
-    if not proc.returncode in status_ok:
+    if proc.returncode not in status_ok:
         log.debug('stdout: {}'.format(stdout))
         log.debug('stderr: {}'.format(stderr))
-        raise RemoteFailureError('Remote command {} exited with exit status {}'
-                                 .format(args, proc.returncode))
+
+        msg = 'Remote command "{}" exited ({})'.format(
+            ' '.join(shlex_quote(a) for a in args), proc.returncode)
+        meaning = status_meaning.get(proc.returncode)
+
+        if meaning:
+            msg += ': ' + meaning
+
+        exc = RemoteFailureError(msg)
+        exc.returncode = proc.returncode
+        exc.cmd_args = args
+        exc.meaning = meaning
+
+        raise exc
 
     return stdout, stderr, proc.returncode
 

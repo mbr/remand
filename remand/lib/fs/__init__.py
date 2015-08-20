@@ -200,3 +200,36 @@ def upload_string(buf, remote_path):
             msg='Upload buffer ({}) -> {}'.format(len(buf), remote_path))
 
     return Unchanged(msg='File up-to-date: {}'.format(remote_path))
+
+
+def walk(top, topdown=True, onerror=None, followlinks=False):
+    try:
+        names = remote.listdir(top)
+    except OSError as e:
+        if onerror:
+            onerror(e)
+        return
+
+    dirs, files = [], []
+    for name in names:
+        fn = remote.path.join(top, name)
+        st = remote.lstat(fn)
+
+        if S_ISDIR(st.st_mode):
+            dirs.append(name)
+        else:
+            files.append(name)
+
+    if topdown:
+        yield top, dirs, files
+
+    for name in dirs:
+        fn = remote.path.join(top, name)
+        st = remote.lstat(fn)
+
+        if followlinks or not S_ISLNK(st.st_mode):
+            for rv in walk(fn, topdown, onerror, followlinks):
+                yield rv
+
+    if not topdown:
+        yield top, dirs, files

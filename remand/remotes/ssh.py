@@ -240,7 +240,7 @@ class SSHRemote(Remote):
                     ssh_host_name(uri)))
             raise
 
-        log.info('SSH connection established')
+        log.debug('SSH connection established')
 
         # verify umask
         log.debug('Verifying umask')

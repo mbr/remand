@@ -82,9 +82,14 @@ def create_dir(path, mode=0777):
 
 
 @contextmanager
-def edit(remote_path):
+def edit(remote_path, create=True):
     with volatile.file() as tmp:
-        tmp.write(remote.file(remote_path, 'rb').read())
+        created = False
+        if create and not remote.lstat(remote_path):
+            tmp.write('')
+            created = True
+        else:
+            tmp.write(remote.file(remote_path, 'rb').read())
         tmp.close()
 
         try:
@@ -93,7 +98,7 @@ def edit(remote_path):
         except Exception:
             raise
         else:
-            if ef.modified:
+            if created or ef.modified:
                 upload_file(ef.name, remote_path).changed
                 ef.changed = True
             else:

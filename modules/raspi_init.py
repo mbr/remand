@@ -1,7 +1,7 @@
 import os
 
 from remand import log, remote
-from remand.lib import proc, fs
+from remand.lib import proc, fs, apt, ssh
 from remand.operation import Changed, Unchanged
 
 from collections import namedtuple
@@ -51,24 +51,6 @@ def disable_raspi_config():
         return Unchanged(msg='raspi-config already stopped and disabled')
 
 
-def register_public_key():
-    # FIXME: this should be in a dedicate ssh authorized_keys module
-    c = False
-
-    if remote.stat('/home/pi'):
-        c |= fs.create_dir('/home/pi/.ssh').changed
-        c |= fs.upload_file(PUB_KEY, '/home/pi/.ssh/authorized_keys').changed
-
-    with proc.sudo():
-        c |= fs.create_dir('/root/.ssh').changed
-        c |= fs.upload_file(PUB_KEY, '/root/.ssh/authorized_keys').changed
-
-    if c:
-        return Changed(msg='Set up SSH keys')
-    else:
-        Unchanged(msg='SSH key already setup correctly')
-
-
 def expand_root_fs():
     dev_size, _, _ = proc.run(['fdisk', '-s', '/dev/mmcblk0'])
     p1_size, _, _ = proc.run(['fdisk', '-s', '/dev/mmcblk0p1'])
@@ -113,10 +95,18 @@ def deluser(name, remove_home=True):
 
 
 def run():
-    register_public_key()
+    ssh.set_authorized_keys([PUB_KEY], 'pi')
     with proc.sudo():
+        ssh.set_authorized_keys([PUB_KEY], 'root')
         deluser('pi')
         disable_raspi_config()
 
-        if expand_root_fs().changed:
+        sd = apt.install_packages(['systemd'])
+        # FIXME: currently, need to manually edit /boot/cmdline.txt to add
+        #        init=/bin/systemd. this needs edit functions as well
+        # also, check for systemd as proc 1 using /proc/1/cmdline or similar
+
+        expand = expand_root_fs()
+
+        if sd.changed or expand.changed:
             reboot()

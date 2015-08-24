@@ -58,6 +58,18 @@ def chown(remote_path, uid=None, gid=None, recursive=False):
 
 
 @operation()
+def chmod(remote_path, mode):
+    st = remote.lstat(remote_path)
+
+    if (st.st_mode & 0o777) != mode:
+        remote.chmod(remote_path, mode)
+        return Changed(
+            msg='Changed mode of {} to {:o}'.format(remote_path, mode))
+
+    return Unchanged(msg='Mode of {} already {:o}'.format(remote_path, mode))
+
+
+@operation()
 def create_dir(path, mode=0777):
     """Ensure that a directory exists at path. Parent directories are created
     if needed.

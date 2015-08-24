@@ -28,6 +28,7 @@ setup(
                       'stuf',
                       'werkzeug',
                       'times',
+                      'volatile',
                       'paramiko',  # needs our bugfix!
                       # chardet is a hidden dependency of python-debian
                       'python-debian',

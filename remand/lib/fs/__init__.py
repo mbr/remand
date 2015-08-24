@@ -1,5 +1,6 @@
-from stat import S_ISDIR, S_ISLNK, S_ISREG
+from contextlib import contextmanager
 import os
+from stat import S_ISDIR, S_ISLNK, S_ISREG
 
 from remand import remote, config, log
 from remand.exc import (ConfigurationError, RemoteFailureError,
@@ -7,7 +8,9 @@ from remand.exc import (ConfigurationError, RemoteFailureError,
                         RemotePathIsNotADirectoryError)
 
 from remand.operation import operation, Changed, Unchanged
+import volatile
 
+from .edit import EditableFile
 from .verify import Verifier
 from .upload import Uploader
 
@@ -76,6 +79,25 @@ def create_dir(path, mode=0777):
         return Changed(msg='Created directory: {}'.format(path))
 
     return Unchanged('Already exists: {}'.format(path))
+
+
+@contextmanager
+def edit(remote_path):
+    with volatile.file() as tmp:
+        tmp.write(remote.file(remote_path, 'rb').read())
+        tmp.close()
+
+        try:
+            ef = EditableFile(tmp.name)
+            yield ef
+        except Exception:
+            raise
+        else:
+            if ef.modified:
+                upload_file(ef.name, remote_path).changed
+                ef.changed = True
+            else:
+                ef.changed = False
 
 
 @operation()

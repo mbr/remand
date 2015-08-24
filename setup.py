@@ -29,6 +29,7 @@ setup(
                       'werkzeug',
                       'times',
                       'volatile',
+                      'sshkeys',
                       'paramiko',  # needs our bugfix!
                       # chardet is a hidden dependency of python-debian
                       'python-debian',

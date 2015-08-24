@@ -1,5 +1,7 @@
-from remand import config
-from remand.lib import proc
+from collections import namedtuple, OrderedDict
+
+from remand import config, remote
+from remand.lib import proc, memoize
 from remand.operation import operation, Unchanged, Changed
 
 _USERADD_STATUS_CODES = {
@@ -15,6 +17,19 @@ _USERADD_STATUS_CODES = {
     13: 'can\'t create mail spool',
     14: 'can\'t update SELinux user mapping',
 }
+
+PasswdEntry = namedtuple('PasswdEntry', 'name,passwd,uid,gid,gecos,home,shell')
+
+
+@memoize()
+def info_users():
+    users = OrderedDict()
+
+    for line in remote.file('/etc/passwd', 'r'):
+        u = PasswdEntry(*line.split(':'))
+        users[u.name] = u
+
+    return users
 
 
 @operation()
@@ -70,4 +85,5 @@ def useradd(name,
         # FIXME: should check if user is up-to-date (home, etc)
         return Unchanged(msg='User {} already exists'.format(name))
 
+    info_users.invalidate_cache()
     return Changed(msg='Created user {}'.format(name))

@@ -1,3 +1,7 @@
+from functools import partial
+
+import hashlib
+
 from stuf.collects import ChainMap
 
 
@@ -26,3 +30,18 @@ def validate_umask(umask):
         raise ValueError('Not an integer umask: {}'.format(umask))
     if umask > 0777:
         raise ValueError('Invalid umask value: {}'.format(umask))
+
+
+def hash_file(self, file_obj, hashfunc=hashlib.sha1, bufsize=None):
+    # hash local file
+    m = hashfunc()
+
+    if bufsize is None:
+        from . import config
+        bufsize = int(config['buffer_size'])
+
+    # read full file in buffer sized chunks
+    for chunk in iter(partial(file_obj.read, bufsize), b''):
+        m.update(chunk)
+
+    return m

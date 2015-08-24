@@ -1,7 +1,7 @@
 import hashlib
 import os
 
-from remand import remote, config, log
+from remand import remote, config, log, util
 from remand.exc import ConfigurationError
 from remand.lib import proc
 
@@ -80,14 +80,7 @@ class VerifierSHA(Verifier):
     def verify_file(self, st, local_path, remote_path):
         # hash local file
         with open(local_path, 'rb') as lfile:
-            m = self.hashfunc()
-
-            # read full file in buffer sized chunks
-            while True:
-                buf = lfile.read(int(config['buffer_size']))
-                if not buf:
-                    break
-                m.update(buf)
+            m = util.hash_file(lfile, self.hashfunc)
 
         remote_hash = self._get_remote_hash(remote_path)
         log.debug('Local hash: {} Remote hash: {}'.format(

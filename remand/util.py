@@ -32,7 +32,7 @@ def validate_umask(umask):
         raise ValueError('Invalid umask value: {}'.format(umask))
 
 
-def hash_file(self, file_obj, hashfunc=hashlib.sha1, bufsize=None):
+def hash_file(file_obj, hashfunc=hashlib.sha1, bufsize=None):
     # hash local file
     m = hashfunc()
 

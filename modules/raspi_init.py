@@ -92,7 +92,6 @@ def enable_systemd():
 def run():
     needs_reboot = False
 
-    ssh.set_authorized_keys([PUB_KEY], 'pi')
     with proc.sudo():
         ssh.set_authorized_keys([PUB_KEY], 'root')
         posix.userdel('pi', remove_home=True, force=True)

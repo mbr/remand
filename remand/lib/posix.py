@@ -42,6 +42,25 @@ def info_users():
     return users
 
 
+@memoize()
+def info_system():
+    FLAG_LIST = {
+        'machine': '-m',
+        'nodename': '-n',
+        'kernel_name': '-s',
+        'kernel_release': '-r',
+        'kernel_version': '-v',
+        'processor': '-p',
+    }
+
+    flag_values = {}
+    for flag_name, flag in FLAG_LIST.items():
+        out, _, _ = proc.run([config['cmd_uname'], flag])
+        flag_values[flag_name] = out.rstrip()
+
+    return flag_values
+
+
 @operation()
 def reboot():
     if config['machine_os'] in ('unix', 'posix'):

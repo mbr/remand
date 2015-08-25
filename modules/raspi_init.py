@@ -1,8 +1,8 @@
 import os
 
-from remand import log, remote
-from remand.lib import proc, fs, apt, ssh
-from remand.operation import Changed, Unchanged
+from remand import remote
+from remand.lib import proc, fs, apt, ssh, posix, machine
+from remand.operation import operation, Changed, Unchanged
 
 from collections import namedtuple
 
@@ -11,6 +11,7 @@ PUB_KEY = os.path.expanduser('~/.ssh/id_rsa.pub')
 UserEntry = namedtuple('UserEntry', 'name,pw,uid,gid,gecos,home,shell')
 
 
+@operation()
 def disable_raspi_config():
     c = False
 
@@ -51,6 +52,7 @@ def disable_raspi_config():
         return Unchanged(msg='raspi-config already stopped and disabled')
 
 
+@operation()
 def expand_root_fs():
     dev_size, _, _ = proc.run(['fdisk', '-s', '/dev/mmcblk0'])
     p1_size, _, _ = proc.run(['fdisk', '-s', '/dev/mmcblk0p1'])
@@ -65,48 +67,39 @@ def expand_root_fs():
         return Changed(msg='Expanded root filesystem')
 
 
-def reboot():
-    log.notice('Rebooting')
-    proc.run(['reboot'])
+@operation()
+def enable_systemd():
+    changed = False
+    changed |= apt.install_packages(['systemd']).changed
 
+    with fs.edit('/boot/cmdline.txt', create=False) as e:
+        flag = 'init=/bin/systemd'
+        lines = e.lines()
+        assert len(lines) == 1
 
-def deluser(name, remove_home=True):
-    # AGAIN, NEEDS EDIT FUNCTIONS.
-    # concept: use a context manager with an edit object. perform edits
-    # once it exits, uploading using fs.upload_string
-    lines = []
-    c = False
-    for line in remote.file('/etc/passwd', 'r'):
-        u = UserEntry(*line.split(':'))
+        if flag not in lines[0]:
+            lines[0] += ' ' + flag
+            e.set_lines(lines)
 
-        if u.name == name:
-            c = True
-            if remove_home:
-                fs.remove_dir(u.home)
-            continue
+    changed |= e.changed
 
-        lines.append(line)
+    if changed:
+        return Changed(msg='Installed systemd')
 
-    if c:
-        fs.upload_string(''.join(lines), '/etc/passwd')
-        return Changed(msg='Removed user pi')
-    else:
-        return Unchanged(msg='User pi already gone')
+    return Unchanged(msg='systemd already active')
 
 
 def run():
+    needs_reboot = False
+
     ssh.set_authorized_keys([PUB_KEY], 'pi')
     with proc.sudo():
         ssh.set_authorized_keys([PUB_KEY], 'root')
-        deluser('pi')
+        posix.userdel('pi', remove_home=True, force=True)
         disable_raspi_config()
 
-        sd = apt.install_packages(['systemd'])
-        # FIXME: currently, need to manually edit /boot/cmdline.txt to add
-        #        init=/bin/systemd. this needs edit functions as well
-        # also, check for systemd as proc 1 using /proc/1/cmdline or similar
+        needs_reboot |= expand_root_fs().changed
+        needs_reboot |= enable_systemd().changed
 
-        expand = expand_root_fs()
-
-        if sd.changed or expand.changed:
-            reboot()
+        if needs_reboot:
+            machine.reboot()

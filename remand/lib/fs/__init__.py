@@ -3,7 +3,8 @@ from contextlib import contextmanager
 import os
 from stat import S_ISDIR, S_ISLNK, S_ISREG
 
-from remand import remote, config, log, proc
+from remand import remote, config, log
+from remand.lib import proc
 from remand.exc import (ConfigurationError, RemoteFailureError,
                         RemoteFileDoesNotExistError,
                         RemotePathIsNotADirectoryError)
@@ -119,7 +120,7 @@ def edit(remote_path, create=True):
 
 
 @contextmanager
-def remote_tmpdir(delete=True, tempdir='/tmp', randbytes=16, mode=0o700):
+def remote_tmpdir(delete=True, randbytes=16, mode=0o700):
     # FIXME: audit this for security issues
 
     if config['cmd_mktemp']:

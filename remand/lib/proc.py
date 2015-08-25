@@ -23,10 +23,10 @@ def run(cmd,
         extra_env={},
         status_ok=(0, ),
         status_meaning={},
-        remote_cwd=None):
+        cwd=None):
     args = _cmd_to_args(cmd)
 
-    proc = remote.popen(args, extra_env=extra_env)
+    proc = remote.popen(args, extra_env=extra_env, cwd=cwd)
     stdout, stderr = proc.communicate(input)
 
     if proc.returncode not in status_ok:
@@ -64,7 +64,7 @@ def sudo(user=None, password=None, timestamp_timeout=2 * 60):
 
     prev_timestamp = [0]
 
-    def sudo_popen(args, bufsize=0, extra_env={}):
+    def sudo_popen(args, cwd=None, extra_env={}):
         # -E preserve environment variables passed
         # -H set the $HOME environment variable (usually default)
         # -S (unused): read password from stdin
@@ -113,7 +113,7 @@ def sudo(user=None, password=None, timestamp_timeout=2 * 60):
 
         pargs.append('--')
         pargs.extend(args)
-        return orig_popen(pargs, bufsize, extra_env)
+        return orig_popen(pargs, cwd, extra_env)
 
     # monkey patch remote.sudo
     orig_popen = remote.popen

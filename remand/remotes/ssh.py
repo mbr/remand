@@ -358,7 +358,7 @@ class SSHRemote(Remote):
 
         if timeout:
             timeout = int(timeout)
-        cmd = ' '.join(envvars + [chdir] + [shlex_quote(part)
+        cmd = ' '.join([chdir] + envvars + [shlex_quote(part)
                                             for part in args])
         log.debug('Executing {}'.format(cmd))
         stdin, stdout, stderr = self._client.exec_command(cmd, timeout=timeout)

@@ -207,7 +207,7 @@ def touch(remote_path):
 
 
 @operation()
-def upload_file(local_path, remote_path=None):
+def upload_file(local_path, remote_path=None, follow_symlink=True):
     """Uploads a local file to a remote and if does not exist or differs
     from the local version, uploads it.
 
@@ -225,18 +225,37 @@ def upload_file(local_path, remote_path=None):
     :param return: ``False`` if no upload was necessary, ``True`` otherwise.
     """
     st, remote_path = _expand_remote_dest(local_path, remote_path)
+    lst = os.stat(local_path) if follow_symlink else os.lstat(local_path)
 
     verifier = Verifier._by_short_name(config['fs_remote_file_verify'])()
     uploader = Uploader._by_short_name(config['fs_remote_file_upload'])()
 
-    if not os.path.exists(local_path):
+    if lst is None:
         raise ConfigurationError('Local file {!r} does not exist'.format(
             local_path))
+
+    if S_ISLNK(lst.st_mode):
+        # local file is a link
+        rst = remote.lstat(remote_path)
+
+        if rst:
+            if not S_ISLNK(rst.st_mode):
+                # remote file is not a link, unlink it
+                remote.unlink(remote_path)
+            elif remote.readlink(remote_path) != os.readlink(local_path):
+                # non matching links
+                remote.unlink(remote_path)
+            else:
+                # links pointing to the same target
+                return Unchanged(
+                    msg='Symbolink link up-to-date: {}'.format(remote_path))
+
+        remote.symlink(os.readlink(local_path), remote_path)
+        return Changed(msg='Created remote link: {}'.format(remote_path))
 
     if not st or not verifier.verify_file(st, local_path, remote_path):
         uploader.upload_file(local_path, remote_path)
         if config.get_bool('fs_update_mtime'):
-            lst = os.stat(local_path)
             times = (lst.st_mtime, lst.st_mtime)
             remote.utime(remote_path, times)
             log.debug('Updated atime/mtime: {}'.format(times))

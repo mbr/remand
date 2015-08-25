@@ -43,6 +43,13 @@ def info_users():
 
 
 @operation()
+def reboot():
+    if config['machine_os'] in ('unix', 'posix'):
+        proc.run([config['cmd_shutdown'], '-r', 'now'])
+    return Changed(msg='Server rebooting')
+
+
+@operation()
 def useradd(name,
             groups=[],
             user_group=True,

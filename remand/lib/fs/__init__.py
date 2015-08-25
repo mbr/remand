@@ -63,6 +63,9 @@ def chown(remote_path, uid=None, gid=None, recursive=False):
 def chmod(remote_path, mode):
     st = remote.lstat(remote_path)
 
+    if mode > 0o777:
+        raise ValueError('Modes above 0o777 are not supported')
+
     if (st.st_mode & 0o777) != mode:
         remote.chmod(remote_path, mode)
         return Changed(

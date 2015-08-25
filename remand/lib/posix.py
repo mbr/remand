@@ -18,6 +18,16 @@ _USERADD_STATUS_CODES = {
     14: 'can\'t update SELinux user mapping',
 }
 
+_USERDEL_STATUS_CODES = {
+    0: 'success',
+    1: 'can\'t update password file',
+    2: 'invalid command syntax',
+    6: 'specified user doesn\'t exist',
+    8: 'user currently logged in',
+    10: 'can\'t update group file',
+    12: 'can\'t remove home directory',
+}
+
 PasswdEntry = namedtuple('PasswdEntry', 'name,passwd,uid,gid,gecos,home,shell')
 
 
@@ -87,3 +97,27 @@ def useradd(name,
 
     info_users.invalidate_cache()
     return Changed(msg='Created user {}'.format(name))
+
+
+@operation()
+def userdel(name, remove_home=False, force=False):
+    cmd = [config['cmd_userdel']]
+
+    if remove_home:
+        cmd.append('-r')
+
+    if force:
+        cmd.append('-f')
+
+    cmd.append(name)
+
+    stdout, stderr, returncode = proc.run(
+        cmd,
+        status_ok=(0, 6),
+        status_meaning=_USERDEL_STATUS_CODES)
+
+    if returncode == 6:
+        return Unchanged(msg='User {} does not exist'.format(name))
+
+    info_users.invalidate_cache()
+    return Changed(msg='Removed user {}'.format(name))

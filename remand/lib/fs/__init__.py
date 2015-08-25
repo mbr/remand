@@ -287,6 +287,32 @@ def upload_string(buf, remote_path):
     return Unchanged(msg='File up-to-date: {}'.format(remote_path))
 
 
+@operation()
+def upload_tree(local_path, remote_path):
+    # FIXME: think about implications regarding ownership, other attributes
+    create_dir(remote_path)
+    changed = False
+
+    for dirpath, dirnames, filenames in os.walk(local_path):
+        rel = os.path.relpath(dirpath, local_path)
+        rem = remote.path.join(remote_path, rel)
+
+        changed |= create_dir(rem).changed
+        for fn in filenames:
+            local_fn = os.path.join(dirpath, fn)
+            remote_fn = remote.path.join(rem, fn)
+
+            changed |= upload_file(local_fn, remote_fn,
+                                   follow_symlink=False).changed
+
+    if changed:
+        return Changed(
+            msg='Uploaded tree {} => {}'.format(local_path, remote_path))
+
+    return Unchanged(
+        msg='Tree already uploaded: {} => {}'.format(local_path, remote_path))
+
+
 def walk(top, topdown=True, onerror=None, followlinks=False):
     try:
         names = remote.listdir(top)

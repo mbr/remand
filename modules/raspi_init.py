@@ -13,6 +13,7 @@ UserEntry = namedtuple('UserEntry', 'name,pw,uid,gid,gecos,home,shell')
 
 @operation()
 def disable_raspi_config():
+    # FIXME: use fs.edit here
     c = False
 
     # we need to remove it from profile.d

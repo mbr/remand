@@ -351,14 +351,15 @@ class SSHRemote(Remote):
         chdir = ''
 
         if cwd is not None:
-            chdir = ' cd {} &&'.format(shlex_quote(cwd))
+            chdir = 'cd {} &&'.format(shlex_quote(cwd))
 
         # get timeout from configuration
         timeout = config['ssh_command_timeout']
 
         if timeout:
             timeout = int(timeout)
-        cmd = ' '.join(envvars + chdir + [shlex_quote(part) for part in args])
+        cmd = ' '.join(envvars + [chdir] + [shlex_quote(part)
+                                            for part in args])
         log.debug('Executing {}'.format(cmd))
         stdin, stdout, stderr = self._client.exec_command(cmd, timeout=timeout)
 

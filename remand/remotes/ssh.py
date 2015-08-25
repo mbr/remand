@@ -345,16 +345,20 @@ class SSHRemote(Remote):
         return self._sftp.rename(oldpath, newpath)
 
     @wrap_sftp_errors
-    def popen(self, args, bufsize=0, extra_env={}):
+    def popen(self, args, cwd=None, extra_env={}):
         envvars = ['{}={}'.format(shlex_quote(k), shlex_quote(v))
                    for k, v in extra_env.items()]
+        chdir = ''
+
+        if cwd is not None:
+            chdir = ' cd {} &&'.format(shlex_quote(cwd))
 
         # get timeout from configuration
         timeout = config['ssh_command_timeout']
 
         if timeout:
             timeout = int(timeout)
-        cmd = ' '.join(envvars + [shlex_quote(part) for part in args])
+        cmd = ' '.join(envvars + chdir + [shlex_quote(part) for part in args])
         log.debug('Executing {}'.format(cmd))
         stdin, stdout, stderr = self._client.exec_command(cmd, timeout=timeout)
 

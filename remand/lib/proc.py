@@ -18,7 +18,12 @@ def _cmd_to_args(cmd):
 
 
 # FIXME: this should be an operation?
-def run(cmd, input=None, extra_env={}, status_ok=(0, ), status_meaning={}):
+def run(cmd,
+        input=None,
+        extra_env={},
+        status_ok=(0, ),
+        status_meaning={},
+        remote_cwd=None):
     args = _cmd_to_args(cmd)
 
     proc = remote.popen(args, extra_env=extra_env)

@@ -131,11 +131,11 @@ class Remote(object):
         """
         raise NotImplementedError
 
-    def popen(self, args, bufsize=0, extra_env={}):
+    def popen(self, args, cwd=None, extra_env={}):
         """Open a process on the remote side.
 
         :param args: The command's args (including argv0)
-        :param bufsize: Buffer size
+        :param cwd: If not ``None``, change to this directory before executing.
         :param extra_env: Dictionary of additional environment variables to
                           set before executing.
         :return: A :class:`~remand.remotes.RemoteProcess` instance.

@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import os
 from stat import S_ISDIR, S_ISLNK, S_ISREG
 
-from remand import remote, config, log
+from remand import remote, config, log, info
 from remand.lib import proc
 from remand.exc import (ConfigurationError, RemoteFailureError,
                         RemoteFileDoesNotExistError,
@@ -55,8 +55,35 @@ def _expand_remote_dest(local_path, remote_path):
 
 @operation()
 def chown(remote_path, uid=None, gid=None, recursive=False):
-    # FIXME: Create remote_walk
-    pass
+    new_owner = ':'
+
+    # no-op
+    if uid is None and gid is None:
+        return
+
+    if uid is not None:
+        new_owner = str(uid) + new_owner
+    if gid is not None:
+        new_owner += str(gid)
+
+    cmd = [config['cmd_chown']]
+
+    if recursive:
+        cmd.append('-R')
+
+    cmd.append('-c')  # FIXME: on BSDs, we need -v here?
+
+    cmd.append(new_owner)
+    cmd.append(remote_path)
+
+    stdout, _, _ = proc.run(cmd)
+
+    if stdout.strip():
+        return Changed(msg='Changed ownership of {} to {}'
+                       .format(remote_path, new_owner))
+
+    return Unchanged(msg='Ownership of {} already {}'
+                     .format(remote_path, new_owner))
 
 
 @operation()

@@ -1,7 +1,7 @@
 import os
 
 from remand import remote
-from remand.lib import proc, fs, apt, ssh, posix, machine
+from remand.lib import proc, fs, apt, ssh, posix
 from remand.operation import operation, Changed, Unchanged
 
 from collections import namedtuple
@@ -103,4 +103,4 @@ def run():
         needs_reboot |= enable_systemd().changed
 
         if needs_reboot:
-            machine.reboot()
+            posix.reboot()

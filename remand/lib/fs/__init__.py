@@ -1,8 +1,9 @@
+from binascii import hexlify
 from contextlib import contextmanager
 import os
 from stat import S_ISDIR, S_ISLNK, S_ISREG
 
-from remand import remote, config, log
+from remand import remote, config, log, proc
 from remand.exc import (ConfigurationError, RemoteFailureError,
                         RemoteFileDoesNotExistError,
                         RemotePathIsNotADirectoryError)
@@ -115,6 +116,31 @@ def edit(remote_path, create=True):
                 ef.changed = True
             else:
                 ef.changed = False
+
+
+@contextmanager
+def remote_tmpdir(delete=True, tempdir='/tmp', randbytes=16, mode=0o700):
+    # FIXME: audit this for security issues
+
+    if config['cmd_mktemp']:
+        # create directory using mktemp command
+        tmpdir, _, _ = proc.run([config['cmd_mktemp'], '-d'])
+        tmpdir = tmpdir.rstrip('\n')
+    else:
+        # emulate mktemp
+        tmpdir = remote.path.join(config['fs_fallback_tmpdir'],
+                                  'remand-' + hexlify(os.urandom(randbytes)))
+
+        remote.mkdir(tmpdir, mode=mode)
+
+    log.debug('Created temporary directory {}'.format(tmpdir))
+
+    try:
+        yield tmpdir
+    finally:
+        if delete:
+            log.debug('Removing temporary directory {}'.format(tmpdir))
+            remove_dir(tmpdir)
 
 
 @operation()

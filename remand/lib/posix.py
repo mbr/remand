@@ -29,6 +29,7 @@ _USERDEL_STATUS_CODES = {
 }
 
 PasswdEntry = namedtuple('PasswdEntry', 'name,passwd,uid,gid,gecos,home,shell')
+GroupEntry = namedtuple('GroupEntry', 'name,passwd,gid,user_list')
 
 
 @memoize()
@@ -37,9 +38,22 @@ def info_users():
 
     for line in remote.file('/etc/passwd', 'r'):
         u = PasswdEntry(*line.split(':'))
-        users[u.name] = u
+        users[u.name] = PasswdEntry(
+            u[0], u[1], int(u[2]), int(u[3]), u[4], u[5], u[6])
 
     return users
+
+
+@memoize()
+def info_groups():
+    groups = OrderedDict()
+
+    for line in remote.file('/etc/group', 'r'):
+        g = GroupEntry(*line.split(':'))
+        user_list = [u for u in g[3].split(',') if u]
+        groups[g.name] = GroupEntry(g[0], g[1], int(g[2]), user_list)
+
+    return groups
 
 
 @memoize()

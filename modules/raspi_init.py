@@ -64,6 +64,7 @@ def expand_root_fs():
         return Unchanged(
             msg='Free space is <= 4M. Not expanding root filesystem')
     else:
+        # fixme: run fdisk and resize2fs instead of raspi-config?
         proc.run(['raspi-config', '--expand-rootfs'])
         return Changed(msg='Expanded root filesystem')
 

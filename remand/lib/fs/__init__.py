@@ -3,7 +3,7 @@ from contextlib import contextmanager
 import os
 from stat import S_ISDIR, S_ISLNK, S_ISREG
 
-from remand import remote, config, log, info
+from remand import remote, config, log
 from remand.lib import proc
 from remand.exc import (ConfigurationError, RemoteFailureError,
                         RemoteFileDoesNotExistError,

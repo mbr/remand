@@ -98,6 +98,19 @@ class Remote(object):
         """
         raise NotImplementedError
 
+    def file(self, name, mode='r', bufsize=-1):
+        """Open a file on the remote side.
+
+        This function mimicks the Python :func:`file` interface, except that
+        the parameter ``buffering`` is called ``bufsize`` instead.
+
+        When dealing with remote files, :ref:`umask` should be taken into
+        account.
+
+        :return: A file-like object
+        """
+        raise NotImplementedError
+
     def listdir(self, path):
         """List directory contents.
 
@@ -139,19 +152,6 @@ class Remote(object):
         :param extra_env: Dictionary of additional environment variables to
                           set before executing.
         :return: A :class:`~remand.remotes.RemoteProcess` instance.
-        """
-        raise NotImplementedError
-
-    def file(self, name, mode='r', bufsize=-1):
-        """Open a file on the remote side.
-
-        This function mimicks the Python :func:`file` interface, except that
-        the parameter ``buffering`` is called ``bufsize`` instead.
-
-        When dealing with remote files, :ref:`umask` should be taken into
-        account.
-
-        :return: A file-like object
         """
         raise NotImplementedError
 

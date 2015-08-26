@@ -385,6 +385,21 @@ class SSHRemote(Remote):
     def symlink(self, target, path):
         return self._sftp.symlink(target, path)
 
+    def tcp_connect(self, addr):
+        log.debug('Opening TCP connection to {}:{}'.format(*addr))
+
+        t = self._client._transport
+        chan = t.open_channel('direct-tcpip',
+                              dest_addr=addr,
+                              src_addr=('127.0.0.1', 0)  # not needed
+                              )
+
+        if not chan:
+            raise IOError('Could not open TCP tunnel to {}:{}'.format(*addr))
+
+        log.debug('Success {}:{}'.format(*addr))
+        return chan
+
     @wrap_sftp_errors
     def umask(self, umask):
         try:
@@ -407,18 +422,3 @@ class SSHRemote(Remote):
         fp = self._sftp.file(name, mode, int(config['buffer_size']))
         fp.set_pipelined(config.get_bool('sftp_pipelined'))
         return fp
-
-    def tcp_open(self, addr):
-        log.debug('Opening TCP connection to {}:{}'.format(*addr))
-
-        t = self._client._transport
-        chan = t.open_channel('direct-tcpip',
-                              dest_addr=addr,
-                              src_addr=('127.0.0.1', 0)  # not needed
-                              )
-
-        if not chan:
-            raise IOError('Could not open TCP tunnel to {}:{}'.format(*addr))
-
-        log.debug('Success {}:{}'.format(*addr))
-        return chan

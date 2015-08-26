@@ -38,7 +38,7 @@ class SocketProxy(object):
             'SocketProxy does not support socket.{}'.format(name))
 
     def connect(self, addr):
-        self._con = remote.tcp_open(addr)
+        self._con = remote.tcp_connect(addr)
 
     def close(self):
         self._con.close()

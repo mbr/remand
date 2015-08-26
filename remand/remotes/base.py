@@ -202,6 +202,14 @@ class Remote(object):
         """
         raise NotImplementedError
 
+    def tcp_connect(self, addr):
+        """Open a TCP connection from the remote.
+
+        :param addr: Destination address to connect to.
+        :return: A socket-like object.
+        """
+        raise NotImplementedError
+
     def umask(self, umask):
         """Set the current umask and return the previous one.
 

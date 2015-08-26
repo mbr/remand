@@ -4,11 +4,7 @@ from remand import remote
 from remand.lib import proc, fs, apt, ssh, posix
 from remand.operation import operation, Changed, Unchanged
 
-from collections import namedtuple
-
 PUB_KEY = os.path.expanduser('~/.ssh/id_rsa.pub')
-
-UserEntry = namedtuple('UserEntry', 'name,pw,uid,gid,gecos,home,shell')
 
 
 @operation()
@@ -96,11 +92,12 @@ def run():
 
     with proc.sudo():
         ssh.set_authorized_keys([PUB_KEY], 'root')
-        posix.userdel('pi', remove_home=True, force=True)
         disable_raspi_config()
 
         needs_reboot |= expand_root_fs().changed
         needs_reboot |= enable_systemd().changed
+
+        posix.userdel('pi', remove_home=True, force=True)
 
         if needs_reboot:
             posix.reboot()

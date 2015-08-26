@@ -205,6 +205,8 @@ class Remote(object):
     def tcp_connect(self, addr):
         """Open a TCP connection from the remote.
 
+        This method must be callable from threads other than the remote's own.
+
         :param addr: Destination address to connect to.
         :return: A socket-like object.
         """

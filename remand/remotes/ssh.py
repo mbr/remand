@@ -386,7 +386,7 @@ class SSHRemote(Remote):
         return self._sftp.symlink(target, path)
 
     def tcp_connect(self, addr):
-        log.debug('Opening TCP connection to {}:{}'.format(*addr))
+        # cannot log here, must be callable by other threads
 
         t = self._client._transport
         chan = t.open_channel('direct-tcpip',
@@ -397,7 +397,6 @@ class SSHRemote(Remote):
         if not chan:
             raise IOError('Could not open TCP tunnel to {}:{}'.format(*addr))
 
-        log.debug('Success {}:{}'.format(*addr))
         return chan
 
     @wrap_sftp_errors

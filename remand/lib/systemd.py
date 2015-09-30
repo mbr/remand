@@ -52,6 +52,12 @@ def start_unit(unit_name):
 
 
 @operation()
+def restart_unit(unit_name):
+    proc.run([config['cmd_systemctl'], 'restart', unit_name])
+    return Changed(msg='Restarted {}'.format(unit_name))
+
+
+@operation()
 def daemon_reload():
     proc.run([config['cmd_systemctl'], 'daemon-reload'])
     return Changed(msg='systemd daemon-reload\'ed')

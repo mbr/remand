@@ -1,10 +1,10 @@
-import sys
 if sys.version_info.major < 3:
     from backports.configparser import ConfigParser
 else:
     from configparser import ConfigParser
 import os
 import re
+import sys
 
 import click
 import logbook

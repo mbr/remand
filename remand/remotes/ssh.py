@@ -102,8 +102,8 @@ def wrap_sftp_errors(f):
             return f(*args, **kwargs)
         except IOError, e:
             fargs = ', '.join(
-                map(repr, args[1:]) + ['{}={!r}'.format(*v)
-                                       for v in kwargs.items()])
+                map(repr, args[1:]) + ['{}={!r}'.format(*v) for v in
+                                       kwargs.items()])
             if e.errno == 2:
                 raise RemoteFileDoesNotExistError(str(e))
             raise RemoteFailureError('SFTP Failed {}({}): {}'.format(
@@ -228,12 +228,14 @@ class SSHRemote(Remote):
 
         uri = config['uri']
         try:
-            self._client.connect(uri.host, uri.port or 22, uri.user,
+            self._client.connect(uri.host,
+                                 uri.port or 22,
+                                 uri.user,
                                  password=uri.password)
         except BadHostKeyException, e:
             raise TransportError(_BAD_KEY_ERROR.format(
-                e.key.get_name(), format_key(e.key), e.expected_key.get_name(),
-                format_key(e.expected_key), ssh_host_name(uri), ))
+                e.key.get_name(), format_key(e.key), e.expected_key.get_name(
+                ), format_key(e.expected_key), ssh_host_name(uri), ))
         except SSHException, e:
             if 'not found in known_hosts' in e.message:
                 raise TransportError(_KNOWN_HOSTS_ERROR.format(
@@ -358,8 +360,8 @@ class SSHRemote(Remote):
 
         if timeout:
             timeout = int(timeout)
-        cmd = ' '.join([chdir] + envvars + [shlex_quote(part)
-                                            for part in args])
+        cmd = ' '.join([chdir] + envvars + [shlex_quote(part) for part in args
+                                            ])
         log.debug('Executing {}'.format(cmd))
         stdin, stdout, stderr = self._client.exec_command(cmd, timeout=timeout)
 

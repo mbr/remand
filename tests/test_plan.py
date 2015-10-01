@@ -55,4 +55,4 @@ def test_dependency_resource_loading(plan, other_plan):
     plan.depends_on(other_plan)
 
     assert os.path.join(PLAN_DIR, 'other', 'files', 'foo_other')\
-           == plan.files                        ['foo_other']
+        == plan.files['foo_other']

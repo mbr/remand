@@ -33,7 +33,8 @@ setup(
                       'paramiko',  # needs our bugfix!
                       # chardet is a hidden dependency of python-debian
                       'python-debian',
-                      'chardet', ],
+                      'chardet',
+                      'future', ],
     entry_points="""
         [console_scripts]
         remand=remand.cli:cli

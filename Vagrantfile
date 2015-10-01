@@ -1,10 +1,10 @@
-# -*- mode: ruby -*-
-# vi: set ft=ruby :
-
-# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  config.vm.box = "ubuntu/trusty64"
+  config.vm.box = "ARTACK/debian-jessie"
+  config.vm.box_url = "https://atlas.hashicorp.com/ARTACK/boxes/debian-jessie"
   config.vm.box_check_update = false
+  #config.vm.synced_folder ".", "/vagrant", :mount_options => ['ro']
+  config.vm.provision "shell",
+    inline: "apt-get update && apt-get -y dist-upgrade && apt-get install -y python-virtualenv python-dev && sudo -u vagrant virtualenv /home/vagrant/remand-venv && cd /home/vagrant && sudo -u vagrant /home/vagrant/remand-venv/bin/pip install -e /vagrant && grep -q -F remand-venv /home/vagrant/.bashrc || echo 'export PATH=$PATH:/home/vagrant/remand-venv/bin' >> /home/vagrant/.bashrc"
 end

@@ -37,7 +37,12 @@ class LocalRemote(Remote):
         env = {}
         env.update(os.environ)
         env.update(extra_env)
-        return subprocess.Popen(args, cwd=cwd, env=env)
+        return subprocess.Popen(args,
+                                cwd=cwd,
+                                env=env,
+                                stdin=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                stdout=subprocess.PIPE)
 
     def tcp_connect(self, addr):
         # cannot log here, must be callable by other threads

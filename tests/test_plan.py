@@ -8,7 +8,7 @@ PLAN_DIR = os.path.join(os.path.dirname(__file__), 'plans')
 
 @pytest.fixture
 def plan_file():
-    return os.path.join(PLAN_DIR, 'sample_plan.py')
+    return os.path.join(PLAN_DIR, 'simple_plan.py')
 
 
 @pytest.fixture

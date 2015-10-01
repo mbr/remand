@@ -23,15 +23,21 @@ class Plan(object):
         plan_id = str(uuid.uuid4()).replace('-', '')
         mod = imp.load_source('_remand_plan_' + plan_id, path)
 
-        candidates = [item for item in mod.__dict__ if isinstance(item, cls)]
+        candidates = [item for item in mod.__dict__.values()
+                      if isinstance(item, cls)]
 
         if not candidates:
             raise ValueError('Module {} does not include a solid plan'
                              .format(path))
 
-        if len(candidates):
+        if len(candidates) > 1:
             raise ValueError('Module {} contains more than one plan'
                              .format(path))
 
         plan = candidates[0]
+
+        # resource_dir is None -> autodetect
+        if plan.resource_dir is None:
+            plan.resource_dir = os.path.dirname(path)
+
         return plan

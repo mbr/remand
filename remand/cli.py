@@ -1,5 +1,3 @@
-import imp
-
 import click
 import logbook
 from logbook.more import ColorizedStderrHandler

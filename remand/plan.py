@@ -47,10 +47,30 @@ class Plan(object):
 
         self.files = PlanResourceHandler(self, 'files')
 
+    def __repr__(self):
+        return '{}({!r})'.format(self.__class__.__name__, self.name)
+
     def depends_on(self, plan):
         self.dependencies.append(plan)
 
+    def execute(self, objective=None):
+        # executes the objective
+        if objective is None:
+            if len(self.objectives) != 1:
+                raise ValueError('No objective given, but plan {} has {} '
+                                 'objectives'.format(self, len(
+                                     self.objectives)))
+
+            objective = self.objectives.values()[0]
+
+        # got our objective, now run it
+
+        return objective()
+
     def objective(self, name=None):
+        if not isinstance(name, str) and name is not None:
+            raise TypeError('Objective name must be string or None')
+
         def _(f):
             self.objectives[name or f.__name__] = f
             return f

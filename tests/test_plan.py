@@ -21,6 +21,19 @@ def other_plan():
     return Plan.load_from_file(os.path.join(PLAN_DIR, 'other', 'plan.py'))
 
 
+def test_objective(plan):
+    @plan.objective()
+    def foo():
+        pass
+
+    assert plan.objectives['foo'] == foo
+
+
+def test_objective_decorator_ensures_callable(plan):
+    with pytest.raises(TypeError):
+        plan.objective(lambda: 1)
+
+
 def test_invalid_load():
     with pytest.raises(ValueError):
         Plan.load_from_file(os.path.join(PLAN_DIR, 'no_plan.py'))

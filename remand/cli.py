@@ -7,6 +7,7 @@ from logbook.more import ColorizedStderrHandler
 from . import _context
 from .configfiles import HostRegistry, load_configuration
 from .exc import RemandError, TransportError
+from .plan import Plan
 from .lib import InfoManager
 from .remotes.ssh import SSHRemote
 from .uri import Uri
@@ -46,14 +47,12 @@ def cli(context, configfiles, debug):
     obj['hosts'] = HostRegistry(obj['config'])
 
 
-@cli.command(help='Runs a module on a number of servers')
-@click.argument('module', type=click.Path(exists=True))
+@cli.command(help='Runs a plan on a number of servers')
+@click.argument('plan', type=Plan.load_from_file)
 @click.argument('uris', default=None, nargs=-1, type=Uri.from_string)
 @click.pass_obj
-def run(obj, module, uris):
-    # instantiate the module
-    active_mod = imp.load_source('_remand_active_mod', module)
-
+def run(obj, plan, uris):
+    # load plan
     for uri in uris:
         _context.push({})
         try:
@@ -80,14 +79,13 @@ def run(obj, module, uris):
                 raise TransportError('Unknown transport: {}'.format(
                     cfg['uri']))
 
-            log.notice('Executing {} on {}'.format(module, cfg['uri']))
+            log.notice('Executing {} on {}'.format(plan, cfg['uri']))
 
             # instantiate remote
             transport = transport_cls()
             _context.top['remote'] = transport
 
-            log.debug('Running {}'.format(active_mod.__file__))
-            active_mod.run()
+            plan.execute()
         except RemandError, e:
             log.error(str(e))
         finally:

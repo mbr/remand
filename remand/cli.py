@@ -8,10 +8,11 @@ from .exc import RemandError, TransportError
 from .plan import Plan
 from .lib import InfoManager
 from .remotes.ssh import SSHRemote
+from .remotes.local import LocalRemote
 from .uri import Uri
 
 # medium-term, this could become a plugin-based solution, if there's need
-all_transports = {'ssh': SSHRemote, }
+all_transports = {'ssh': SSHRemote, 'local': LocalRemote}
 
 # core logger
 log = logbook.Logger('remand')

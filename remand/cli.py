@@ -21,11 +21,14 @@ APP_NAME = 'remand'
 
 
 @click.group(help='Administer servers remotely')
-@click.option('--debug', '-d',
+@click.option('--debug',
+              '-d',
               help='Output more debugging information',
               is_flag=True,
               default=False)
-@click.option('configfiles', '--config', '-c',
+@click.option('configfiles',
+              '--config',
+              '-c',
               multiple=True,
               type=click.Path(),
               help='Additional configuration files to read')

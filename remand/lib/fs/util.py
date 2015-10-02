@@ -14,13 +14,11 @@ class RegistryBase(object):
         if v is None:
             raise ConfigurationError(
                 'Unknown {}: {!r}. Check your configuration setting.'
-                .format(cls.__name__, short_name)
-            )
+                .format(cls.__name__, short_name))
 
         subclass = cls.registry[short_name]
         log.debug('{} {!r} -> {}'.format(
-            cls.__name__, short_name, subclass.__name__)
-        )
+            cls.__name__, short_name, subclass.__name__))
         return subclass
 
     def __str__(self):

@@ -218,13 +218,16 @@ def remove_dir(remote_path, recursive=True):
 
 
 @operation()
-def touch(remote_path):
+def touch(remote_path, mtime=None, atime=None):
     """Update mtime and atime of a path.
 
     Similar to running ``touch remote_path``.
 
     :param remote_path: Remote path whose times will get updated.
-    :return: Since it always updates to the current time, calling this function
+    :param mtime: New mtime. If ``None``, uses the current time.
+    :param atime: New atime. Only used if ``mtime`` is not None. Defaults to
+                  ``mtime``.
+    :return: Since it always updates the current time, calling this function
              will always result in a modification.
     """
     # ensure the file exists
@@ -232,8 +235,14 @@ def touch(remote_path):
         with remote.file(remote_path, 'w') as out:
             out.write('')
 
-    remote.utime(remote_path, None)
-    return Changed(msg=u'Touched {}'.format(remote_path))
+    if mtime is None:
+        remote.utime(remote_path, None)
+        return Changed(msg=u'Touched {} to current time'.format(remote_path))
+    else:
+        mtime = mtime if mtime is not None else atime
+        remote.utime(remote_path, (atime, mtime))
+        return Changed(msg=u'Touched {} to mtime={}, atime={}'.format(
+            remote_path, mtime, atime))
 
 
 @operation()

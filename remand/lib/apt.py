@@ -1,47 +1,82 @@
 from collections import OrderedDict, namedtuple
-from datetime import datetime, timedelta
 import os
+import time
 
 from debian.deb822 import Deb822
 from remand import log, remote, config
 from remand.exc import RemoteFailureError
 from remand.lib import proc, memoize, fs
-from remand.operation import operation, Unchanged, Changed, any_changed
-import times
+from remand.operation import operation, Unchanged, Changed
 
 PackageRecord = namedtuple('PackageRecord', 'name,version')
 
 
-def _timestamp_to_datetime(rfn):
-    st = remote.stat(rfn)
-    if not st:
-        ts = 0
-    else:
-        ts = st.st_mtime
+class CachedRemoteTimestamp(object):
+    def __init__(self, rpath):
+        self.rpath = rpath
+        self.synced = False
 
-    return times.to_universal(ts)
+    def sync(self):
+        log.debug('Syncing timestamp {}'.format(self.rpath))
+        if self.synced:
+            log.debug('Timestamp already synced')
+            return
 
+        # ensure directory for timestamp exists
+        if fs.create_dir(remote.path.dirname(self.rpath), 0o755).changed:
+            # had to create directory, new timestamp
+            self.synced = True
+            self._current = 0
+            log.debug('Timestamp did not exist')
+            return
 
-def _get_remand_update_stamp():
-    UPDATE_FILE = '/var/lib/remand/last-apt-update'
+        # directory already exists
+        st = remote.stat(self.rpath)
+        if not st:
+            # file does not exist
+            self._current = 0
+            log.debug('Timestamp did not exist')
+        else:
+            self._current = st.st_mtime
+            log.debug('Timestamp synced to {}'.format(self._current))
+        self.synced = True
 
-    fs.create_dir(remote.path.dirname(UPDATE_FILE), 0o755)
-    return UPDATE_FILE
+    @property
+    def current(self):
+        self.sync()
+        return self._current
+
+    def set(self, timestamp=None):
+        # ensure directory for timestamp exists
+        fs.create_dir(remote.path.dirname(self.rpath), 0o755)
+
+        # update timestamp
+        fs.touch(self.rpath, timestamp)
+
+        # update cached values
+        self._current = timestamp
+        self.synced = True
+        log.debug('Timestamp {} set to {}'.format(self.rpath, self._current))
+
+    def get_age(self):
+        self.sync()
+
+        age = time.time() - self._current
+        log.debug('Timestamp age ({}): {}'.format(self.rpath, age))
+        return age
+
+    def mark_current(self):
+        self.set(None)
+
+    def mark_stale(self):
+        self.set(0)
 
 
 @memoize()
-def info_last_update():
-    # note: may be inaccurate, if the necessary hooks are not set
-    return max(
-        _timestamp_to_datetime(_get_remand_update_stamp()),
-        _timestamp_to_datetime('/var/lib/apt/periodic/update-success-stamp'),
-        _timestamp_to_datetime('/var/lib/apt/periodic/update-stamp'))
-
-
-@memoize()
-def info_last_upgrade():
-    # note: may be inaccurate, if the necessary hooks are not set
-    return _timestamp_to_datetime('/var/lib/apt/periodic/upgrade-stamp')
+def info_update_timestamp():
+    # note: /var/lib/apt/periodic may be inaccurate, if the necessary hooks are
+    #       not set. for this reason, we just use our own file
+    return CachedRemoteTimestamp('/var/lib/remand/last-apt-update')
 
 
 @memoize()
@@ -58,21 +93,23 @@ def info_installed_packages():
 
 
 @operation()
-def update(max_age=60 * 60):
-    now = times.now()
+def update(max_age=3600):
+    if max_age < 0:
+        return Unchanged(msg='apt update disabled (max_age < 0).')
+
+    ts = info_update_timestamp()
 
     if max_age:
-        current_age = now - info_last_update()
-        if current_age < timedelta(seconds=max_age):
+        age = ts.get_age()
+        if age < max_age:
             return Unchanged(
                 msg='apt cache is only {:.0f} minutes old, not updating'
-                .format(current_age.total_seconds() / 60))
+                .format(age / 60))
 
     proc.run([config['cmd_apt_get'], 'update'])
 
     # modify update stamp
-    fs.touch(_get_remand_update_stamp())
-    info_last_update.update_cache(datetime.utcnow())
+    ts.mark_current()
 
     return Changed(msg='apt cache updated')
 
@@ -97,9 +134,11 @@ def query_cache(pkgs):
 
 
 @operation()
-def install_packages(pkgs, check_first=True, release=None):
+def install_packages(pkgs, check_first=True, release=None, max_age=3600):
     if check_first and set(pkgs) < set(info_installed_packages().keys()):
         return Unchanged(msg='Already installed: {}'.format(' '.join(pkgs)))
+
+    update(max_age)
 
     args = [config['cmd_apt_get']]
     if release:
@@ -173,25 +212,27 @@ def dpkg_install(paths, check=True):
 
 @operation()
 def install_preference(path, name=None):
-    return fs.upload_file(
+    op = fs.upload_file(
         path,
         remote.path.join(config['apt_preferences_d'], name or
                          os.path.basename(path)),
         create_parent=True)
 
+    if op.changed:
+        info_update_timestamp().mark_stale()
+
+    return op
+
 
 @operation()
 def install_source_list(path, name=None):
-    return fs.upload_file(
+    op = fs.upload_file(
         path,
         remote.path.join(config['apt_sources_list_d'], name or
                          os.path.basename(path)),
         create_parent=True)
 
+    if op.changed:
+        info_update_timestamp().mark_stale()
 
-@operation()
-def install_source_lists(paths):
-    if any_changed(*[install_source_list(path) for path in paths]):
-        update(max_age=0)
-        return Changed('added apt sources added and updated')
-    return Unchanged()
+    return op

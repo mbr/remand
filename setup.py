@@ -27,7 +27,6 @@ setup(
                       'configparser>=3.5.0b2',
                       'stuf',
                       'werkzeug',
-                      'times',
                       'volatile',
                       'sshkeys',
                       'paramiko',  # needs our bugfix!

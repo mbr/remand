@@ -34,7 +34,8 @@ setup(
                       # chardet is a hidden dependency of python-debian
                       'python-debian',
                       'chardet',
-                      'future', ],
+                      'future',
+                      'requests', ],
     entry_points="""
         [console_scripts]
         remand=remand.cli:cli

@@ -122,6 +122,56 @@ def install_packages(pkgs, check_first=True, release=None):
 
 
 @operation()
+def dpkg_install(paths, check=True):
+    pkgs = paths
+    if not hasattr(paths, 'keys'):
+        pkgs = {}
+
+        # determine package names from filenames
+        for p in paths:
+            fn = os.path.basename(p)
+            pkgs[fn[:fn.index('_')]] = p
+
+    # log names
+    log.debug('Package names: ' + ', '.join('{} -> {}'.format(k, v) for k, v in
+                                            pkgs.items()))
+
+    if check:
+        missing = []
+        installed = info_installed_packages()
+
+        for name in pkgs:
+            if name not in installed:
+                missing.append(name)
+    else:
+        missing = pkgs.keys()
+
+    log.debug('Installing packages: {}'.format(missing))
+
+    if not missing:
+        return Unchanged('Packages {} already installed'.format(', '.join(
+            pkgs.keys())))
+
+    # FIXME: see above
+    info_installed_packages.invalidate_cache()
+
+    with fs.remote_tmpdir() as rtmp:
+        # upload packages to be installed
+        pkg_files = []
+        for name in missing:
+            fs.upload_file(pkgs[name])
+            pkg_files.append(remote.path.join(rtmp, pkgs[name]))
+
+        # install in a single dpkg install line
+        # FIXME: add debconf default and such (same as apt)
+        args = [config['cmd_dpkg'], '-i']
+        args.extend(pkg_files)
+        proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
+
+    return Changed(msg='Installed packages {}'.format(', '.join(missing)))
+
+
+@operation()
 def install_preference(path, name=None):
     return fs.upload_file(
         path,

@@ -1,11 +1,12 @@
 from collections import OrderedDict, namedtuple
 from datetime import datetime, timedelta
+import os
 
 from debian.deb822 import Deb822
 from remand import log, remote, config
 from remand.exc import RemoteFailureError
 from remand.lib import proc, memoize, fs
-from remand.operation import operation, Unchanged, Changed
+from remand.operation import operation, Unchanged, Changed, any_changed
 import times
 
 PackageRecord = namedtuple('PackageRecord', 'name,version')
@@ -117,3 +118,27 @@ def install_packages(pkgs, check_first=True):
 
     # FIXME: detect if packages were installed?
     return Changed(msg='Installed {}'.format(' '.join(pkgs)))
+
+
+@operation()
+def install_source_list(path, name=None):
+    name = name or os.path.basename(path)
+    changed = False
+
+    changed |= fs.create_dir(config['apt_sources_list_d']).changed
+    changed |= fs.upload_file(path,
+                              remote.path.join(config['apt_sources_list_d'],
+                                               name)).changed
+
+    if changed:
+        return Changed(msg='Added apt sources.list.d: {}'.format(name))
+
+    return Unchanged(msg='apt sources already installed: {}'.format(name))
+
+
+@operation()
+def install_source_lists(paths):
+    if any_changed(*[install_source_list(path) for path in paths]):
+        update(max_age=0)
+        return Changed('added apt sources added and updated')
+    return Unchanged()

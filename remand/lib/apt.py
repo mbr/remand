@@ -80,6 +80,19 @@ def info_update_timestamp():
 
 
 @memoize()
+def info_dpkg_architecture():
+    stdout, _, _ = proc.run([config['cmd_dpkg'], '--print-architecture'])
+    return stdout.strip()
+
+
+@memoize()
+def info_dpkg_foreign_architectures():
+    stdout, _, _ = proc.run(
+        [config['cmd_dpkg'], '--print-foreign-architectures'])
+    return stdout.splitlines()
+
+
+@memoize()
 def info_installed_packages():
     stdout, _, _ = proc.run([config['cmd_dpkg_query'], '--show'])
 
@@ -208,6 +221,21 @@ def dpkg_install(paths, check=True):
         proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
 
     return Changed(msg='Installed packages {}'.format(', '.join(missing)))
+
+
+@operation()
+def dpkg_add_architecture(arch):
+    archs = [info_dpkg_architecture()] + info_dpkg_foreign_architectures()
+
+    if arch in archs:
+        return Unchanged(msg='Architecture already enabled: {}'.format(arch))
+
+    proc.run([config['cmd_dpkg'], '--add-architecture', arch])
+
+    # invalidate caches
+    info_dpkg_foreign_architectures.invalidate_cache()
+    info_update_timestamp().mark_stale()
+    return Changed(msg='New architecture added: {}'.format(arch))
 
 
 @operation()

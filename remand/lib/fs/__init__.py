@@ -237,7 +237,10 @@ def touch(remote_path):
 
 
 @operation()
-def upload_file(local_path, remote_path=None, follow_symlink=True):
+def upload_file(local_path,
+                remote_path=None,
+                follow_symlink=True,
+                create_parent=False):
     """Uploads a local file to a remote and if does not exist or differs
     from the local version, uploads it.
 
@@ -284,7 +287,11 @@ def upload_file(local_path, remote_path=None, follow_symlink=True):
         return Changed(msg='Created remote link: {}'.format(remote_path))
 
     if not st or not verifier.verify_file(st, local_path, remote_path):
+        if create_parent:
+            create_dir(remote.path.dirname(remote_path))
+
         uploader.upload_file(local_path, remote_path)
+
         if config.get_bool('fs_update_mtime'):
             times = (lst.st_mtime, lst.st_mtime)
             remote.utime(remote_path, times)
@@ -295,7 +302,7 @@ def upload_file(local_path, remote_path=None, follow_symlink=True):
 
 
 @operation()
-def upload_string(buf, remote_path):
+def upload_string(buf, remote_path, create_parent=False):
     """Similar to :func:`~remand.lib.fs.upload_file`, but uploads a
     buffer instead of a file-like object.
 
@@ -310,6 +317,8 @@ def upload_string(buf, remote_path):
     uploader = Uploader._by_short_name(config['fs_remote_string_upload'])()
 
     if not st or not verifier.verify_buffer(st, buf, remote_path):
+        if create_parent:
+            create_dir(remote.path.dirname(remote_path))
         uploader.upload_buffer(buf, remote_path)
         return Changed(
             msg='Upload buffer ({}) -> {}'.format(len(buf), remote_path))

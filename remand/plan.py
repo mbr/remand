@@ -55,8 +55,12 @@ class WebResourceHandler(Mapping):
         self.urls[name] = (url, hashtype, hashsum)
 
     def download(self, name):
-        filename = name
         url, hashtype, hashsum = self.urls[name]
+
+        filename = os.path.join(self.storage, hashsum, name)
+        d = os.path.dirname(filename)
+        if not os.path.exists(d):
+            os.makedirs(d)
 
         if os.path.exists(filename):
             log.info('Already downloaded: {}'.format(name))

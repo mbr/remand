@@ -47,10 +47,11 @@ def cli(context, configfiles, debug):
 
 
 @cli.command(help='Runs a plan on a number of servers')
-@click.argument('plan', type=Plan.load_from_file)
+@click.argument('plan', type=click.Path(exists=True))
 @click.argument('uris', default=None, nargs=-1, type=Uri.from_string)
 @click.pass_obj
 def run(obj, plan, uris):
+    plan = Plan.load_from_file(plan)
     # load plan
     for uri in uris:
         _context.push({})
@@ -72,6 +73,7 @@ def run(obj, plan, uris):
             _context.top['log'] = log
             _context.top['state'] = {}
             _context.top['info'] = InfoManager()
+            _context.top['current_plan'] = plan
 
             transport_cls = all_transports.get(cfg['uri'].transport, None)
             if not transport_cls:

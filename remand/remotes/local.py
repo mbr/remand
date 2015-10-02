@@ -20,14 +20,26 @@ class LocalRemote(Remote):
     file = open
     getcwd = os.getcwd
     listdir = os.listdir
-    lstat = os.lstat
+
+    def lstat(self, path):
+        if not os.path.exists(path):
+            return None
+
+        return os.lstat(path)
+
     mkdir = os.mkdir
     normalize = lambda path: os.path.abspath(os.path.realpath(path))
     readlink = os.readlink
     rename = lambda oldpath, newpath: os.rename(oldpath, newpath)
 
     rmdir = os.rmdir
-    stat = os.stat
+
+    def stat(self, path):
+        if not os.path.exists(path):
+            return None
+
+        return os.stat(path)
+
     symlink = os.symlink
     umask = os.umask
     unlink = os.unlink

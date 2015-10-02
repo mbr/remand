@@ -121,6 +121,15 @@ def install_packages(pkgs, check_first=True):
 
 
 @operation()
+def install_preference(path, name=None):
+    return fs.upload_file(
+        path,
+        remote.path.join(config['apt_preferences_d'], name or
+                         os.path.basename(path)),
+        create_parent=True)
+
+
+@operation()
 def install_source_list(path, name=None):
     return fs.upload_file(
         path,

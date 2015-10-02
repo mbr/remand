@@ -97,21 +97,22 @@ def query_cache(pkgs):
 
 
 @operation()
-def install_packages(pkgs, check_first=True):
+def install_packages(pkgs, check_first=True, release=None):
     if check_first and set(pkgs) < set(info_installed_packages().keys()):
         return Unchanged(msg='Already installed: {}'.format(' '.join(pkgs)))
 
-    proc.run(
-        [config['cmd_apt_get'],
-         'install',
-         '--quiet',
-         '--yes',  # options below don't work. why?
-         #'--option', 'Dpkg::Options::="--force-confdef"',
-         #'--option', 'Dpkg::Options::="--force-confold"'
-         ] + list(pkgs),
-        extra_env={
-            'DEBIAN_FRONTEND': 'noninteractive',
-        })
+    args = [config['cmd_apt_get']]
+    if release:
+        args.extend(['-t', release])
+
+    args.extend([
+        'install',
+        '--quiet',
+        '--yes',  # FIXME: options below don't work. why?
+        #'--option', 'Dpkg::Options::="--force-confdef"',
+        #'--option', 'Dpkg::Options::="--force-confold"'
+    ] + list(pkgs), )
+    proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
 
     # FIXME: make this a decorator for info, add "change_invalides" decorator?
     info_installed_packages.invalidate_cache()

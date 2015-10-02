@@ -5,6 +5,10 @@ import logbook
 log = logbook.Logger('op')
 
 
+def any_changed(*changes):
+    return any(c.changed for c in changes)
+
+
 def operation():
     def wrapper(f):
         @wraps(f)

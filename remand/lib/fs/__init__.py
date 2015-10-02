@@ -239,7 +239,7 @@ def touch(remote_path, mtime=None, atime=None):
         remote.utime(remote_path, None)
         return Changed(msg=u'Touched {} to current time'.format(remote_path))
     else:
-        mtime = mtime if mtime is not None else atime
+        atime = atime if atime is not None else mtime
         remote.utime(remote_path, (atime, mtime))
         return Changed(msg=u'Touched {} to mtime={}, atime={}'.format(
             remote_path, mtime, atime))

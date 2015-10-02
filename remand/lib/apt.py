@@ -122,18 +122,11 @@ def install_packages(pkgs, check_first=True):
 
 @operation()
 def install_source_list(path, name=None):
-    name = name or os.path.basename(path)
-    changed = False
-
-    changed |= fs.create_dir(config['apt_sources_list_d']).changed
-    changed |= fs.upload_file(path,
-                              remote.path.join(config['apt_sources_list_d'],
-                                               name)).changed
-
-    if changed:
-        return Changed(msg='Added apt sources.list.d: {}'.format(name))
-
-    return Unchanged(msg='apt sources already installed: {}'.format(name))
+    return fs.upload_file(
+        path,
+        remote.path.join(config['apt_sources_list_d'], name or
+                         os.path.basename(path)),
+        create_parent=True)
 
 
 @operation()

@@ -6,12 +6,14 @@ else:
 import os
 import re
 
+from appdirs import AppDirs
 import click
 import logbook
 
 from .util import TypeConversionChainMap
 
 log = logbook.Logger('config')
+app_dirs = AppDirs('remand', False)
 
 
 def load_configuration(app_name, configfiles=[]):
@@ -25,7 +27,7 @@ def load_configuration(app_name, configfiles=[]):
     """
     fns = [
         os.path.join(os.path.dirname(__file__), 'defaults.cfg'),
-        os.path.join(click.get_app_dir(app_name), 'config.ini'),
+        os.path.join(app_dirs.user_config_dir, 'config.ini'),
     ]
 
     if 'REMAND_CONFIG' in os.environ:

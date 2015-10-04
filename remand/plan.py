@@ -10,6 +10,7 @@ import uuid
 import click
 
 from . import config, log
+from .configfiles import app_dirs
 
 INVALID_CHARS = re.compile('[^A-Za-z0-9_]')
 
@@ -47,9 +48,17 @@ class PlanResourceHandler(Mapping):
 class WebResourceHandler(Mapping):
     # FIXME: consolidate with PlanResourceHandler
 
-    def __init__(self, storage):
+    def __init__(self):
         self.urls = {}
-        self.storage = storage
+
+    @property
+    def storage(self):
+        cache_dir = config.get('download_cache', '') or app_dirs.user_cache_dir
+
+        if not os.path.exists(cache_dir):
+            os.makedirs(cache_dir)
+
+        return cache_dir
 
     def add_url(self, name, url, hashtype, hashsum):
         self.urls[name] = (url, hashtype, hashsum)
@@ -108,9 +117,7 @@ class Plan(object):
         self.dependencies = []
 
         self.files = PlanResourceHandler(self, 'files')
-        # FIXME: use real cache location stored in configfile, or temporary
-        #        directory per run
-        self.webfiles = WebResourceHandler('/tmp')
+        self.webfiles = WebResourceHandler()
 
     def __repr__(self):
         return '{}({!r})'.format(self.__class__.__name__, self.name)

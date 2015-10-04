@@ -119,8 +119,8 @@ def sudo(user=None, password=None, timestamp_timeout=2 * 60):
     orig_popen = remote.popen
     remote.popen = sudo_popen
 
-    sftp_cmd = ' '.join([shlex_quote(part)
-                         for part in sudo_args] + [config['sftp_location']])
+    sftp_cmd = ' '.join([shlex_quote(part) for part in sudo_args] +
+                        [config['sftp_location']])
 
     # override sftp subsystem
     config['sftp_command'] = sftp_cmd

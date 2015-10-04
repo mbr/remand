@@ -49,12 +49,27 @@ class LocalRemote(Remote):
         env = {}
         env.update(os.environ)
         env.update(extra_env)
-        return subprocess.Popen(args,
+        proc = subprocess.Popen(args,
                                 cwd=cwd,
                                 env=env,
                                 stdin=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 stdout=subprocess.PIPE)
+
+        orig_communicate = proc.communicate
+
+        # decorate communicate to accept read instances
+        def _communicate(input):
+            if input and hasattr(input, 'read'):
+                # FIXME: this is fairly bad (large files!). needs a
+                # modification of the original API or a reimplementation of the
+                # communicate method
+                input = input.read()
+            return orig_communicate(input)
+
+        proc.communicate = _communicate
+
+        return proc
 
     def tcp_connect(self, addr):
         # cannot log here, must be callable by other threads

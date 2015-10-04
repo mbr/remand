@@ -253,7 +253,15 @@ def install_preference(path, name=None):
 
 
 @operation()
-def install_source_list(path, name=None):
+def install_source_list(path, name=None, main=False):
+    if main:
+        if name is not None:
+            raise ValueError('Cannot provide name when uploading sources.list')
+
+        op = fs.upload_file(path,
+                            config['apt_sources_list'],
+                            create_parent=True)
+
     op = fs.upload_file(
         path,
         remote.path.join(config['apt_sources_list_d'], name or

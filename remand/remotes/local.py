@@ -12,7 +12,7 @@ class LocalRemote(Remote):
     def __init__(self):
         # verify umask
         umask = int(config['reset_umask'], 8)
-        log.debug('Setting umask to {}'.format(umask))
+        log.debug('Setting umask to {:o}'.format(umask))
         os.umask(umask)
 
     chdir = os.chdir

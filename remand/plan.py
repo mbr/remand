@@ -112,7 +112,10 @@ class WebResourceHandler(Mapping):
 class Plan(object):
     def __init__(self, name, resource_dir=None):
         self.name = name
-        self.resource_dir = resource_dir
+        self.resource_dir = None
+        if resource_dir is not None:
+            self.set_resouce_dir(resource_dir)
+
         self.objectives = {}
         self.dependencies = []
 
@@ -121,6 +124,9 @@ class Plan(object):
 
     def __repr__(self):
         return '{}({!r})'.format(self.__class__.__name__, self.name)
+
+    def set_resouce_dir(self, resource_dir):
+        self.resource_dir = os.path.abspath(resource_dir)
 
     def depends_on(self, plan):
         self.dependencies.append(plan)
@@ -169,6 +175,6 @@ class Plan(object):
 
         # resource_dir is None -> autodetect
         if plan.resource_dir is None:
-            plan.resource_dir = os.path.dirname(path)
+            plan.set_resouce_dir(os.path.dirname(path))
 
         return plan

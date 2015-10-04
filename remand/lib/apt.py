@@ -262,11 +262,12 @@ def install_source_list(path, name=None, main=False):
                             config['apt_sources_list'],
                             create_parent=True)
 
-    op = fs.upload_file(
-        path,
-        remote.path.join(config['apt_sources_list_d'], name or
-                         os.path.basename(path)),
-        create_parent=True)
+    else:
+        op = fs.upload_file(
+            path,
+            remote.path.join(config['apt_sources_list_d'], name or
+                             os.path.basename(path)),
+            create_parent=True)
 
     if op.changed:
         info_update_timestamp().mark_stale()

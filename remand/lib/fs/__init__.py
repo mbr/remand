@@ -87,14 +87,35 @@ def chown(remote_path, uid=None, gid=None, recursive=False):
 
 
 @operation()
-def chmod(remote_path, mode):
+def chmod(remote_path, mode, recursive=False, executable=False):
+    # FIXME: instead of executable, add parsing of rwxX-style modes
+    # FIXME: add speedup by using local chmod
+    xmode = mode if not executable else mode | 0o111
+
     st = remote.lstat(remote_path)
 
     if mode > 0o777:
         raise ValueError('Modes above 0o777 are not supported')
 
-    if (st.st_mode & 0o777) != mode:
-        remote.chmod(remote_path, mode)
+    changed = False
+    actual_mode = st.st_mode & 0o777
+
+    # if the target is a directory or already has at least one executable bit,
+    # we apply the executable mode (see chmod manpage for details)
+    correct_mode = (xmode if S_ISDIR(st.st_mode) or actual_mode & 0o111 else
+                    mode)
+
+    if actual_mode != correct_mode:
+        remote.chmod(remote_path, correct_mode)
+        changed = True
+
+    if recursive and S_ISDIR(st.st_mode):
+        for rfn in remote.listdir(remote_path):
+            changed |= chmod(
+                remote.path.join(remote_path, rfn), mode, True,
+                executable).changed
+
+    if changed:
         return Changed(
             msg='Changed mode of {} to {:o}'.format(remote_path, mode))
 

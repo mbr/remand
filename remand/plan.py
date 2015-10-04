@@ -63,7 +63,7 @@ class WebResourceHandler(Mapping):
             os.makedirs(d)
 
         if os.path.exists(filename):
-            log.info('Already downloaded: {}'.format(name))
+            log.debug('Already downloaded: {}'.format(name))
             return filename
 
         log.info('Downloading and verifying {}'.format(url))

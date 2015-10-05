@@ -8,6 +8,7 @@ import requests
 import uuid
 
 import click
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 from . import config, log
 from .configfiles import app_dirs
@@ -15,28 +16,30 @@ from .configfiles import app_dirs
 INVALID_CHARS = re.compile('[^A-Za-z0-9_]')
 
 
-class PlanResourceHandler(Mapping):
-    def __init__(self, plan, subdir, attr_name=None):
-        self.attr_name = attr_name or subdir
-        self.subdir = subdir or ''
+class ResourceHandlerMixin(Mapping):
+    def __init__(self, plan, attr_name=None):
         self.plan = plan
+        self.attr_name = attr_name
+
+    def _load_item(self, name):
+        raise NotImplementedError
 
     def __getitem__(self, name):
-        if self.plan.resource_dir:
-            path = os.path.join(self.plan.resource_dir, self.subdir, name)
+        item = self._load_item(name)
 
-            if os.path.exists(path):
-                return path
+        # return our item
+        if item is not None:
+            return item
 
-        # no resource found or no resource dir, try deps
+        # return item from a dependency
         for dep in self.plan.dependencies:
-            try:
-                return getattr(dep, self.attr_name)[name]
-            except KeyError:
-                pass
+            item = getattr(dep, self.attr_name)._load_item(name)
 
-        # nothing found
-        raise KeyError(os.path.join(self.subdir, name))
+            if item is not None:
+                return item
+
+        # nothing found, key error
+        raise KeyError(name)
 
     def __len__(self):
         raise NotImplementedError
@@ -45,10 +48,21 @@ class PlanResourceHandler(Mapping):
         raise NotImplementedError
 
 
-class WebResourceHandler(Mapping):
-    # FIXME: consolidate with PlanResourceHandler
+class FileResourceHandler(ResourceHandlerMixin):
+    def __init__(self, plan, subdir, attr_name=None):
+        super(FileResourceHandler, self).__init__(plan, attr_name or subdir)
+        self.subdir = subdir or ''
 
-    def __init__(self):
+    def _load_item(self, name):
+        if self.plan.resource_dir:
+            path = os.path.join(self.plan.resource_dir, self.subdir, name)
+            if os.path.exists(path):
+                return path
+
+
+class WebResourceHandler(ResourceHandlerMixin):
+    def __init__(self, plan, attr_name):
+        super(WebResourceHandler, self).__init__(plan, attr_name)
         self.urls = {}
 
     @property
@@ -99,14 +113,35 @@ class WebResourceHandler(Mapping):
 
         return filename
 
-    def __getitem__(self, name):
+    def _load_item(self, name):
+        if name not in self.urls:
+            return None
         return self.download(name)
 
-    def __len__(self):
-        raise NotImplementedError
 
-    def __iter__(self):
-        raise NotImplementedError
+class TemplateResourceHandler(ResourceHandlerMixin):
+    def __init__(self, plan, template_dir, attr_name=None):
+        super(TemplateResourceHandler, self).__init__(plan, attr_name or
+                                                      template_dir)
+        self.template_dir = template_dir
+        self._jinja_env = None
+
+    @property
+    def jinja_env(self):
+        # initialize once resource dir is known
+        if self._jinja_env is None:
+            if self.plan.resource_dir is None:
+                raise ValueError('jinja_env requested, but no resource_dir '
+                                 'set')
+            self._jinja_env = Environment(loader=FileSystemLoader(os.path.join(
+                self.plan.resource_dir, 'templates')))
+        return self._jinja_env
+
+    def _load_item(self, name):
+        try:
+            return self.plan.jinja_env.get_template('name')
+        except TemplateNotFound:
+            return None
 
 
 class Plan(object):
@@ -119,8 +154,9 @@ class Plan(object):
         self.objectives = {}
         self.dependencies = []
 
-        self.files = PlanResourceHandler(self, 'files')
-        self.webfiles = WebResourceHandler()
+        self.files = FileResourceHandler(self, 'files')
+        self.webfiles = WebResourceHandler(self, 'webfiles')
+        self.templates = TemplateResourceHandler(self, 'templates')
 
     def __repr__(self):
         return '{}({!r})'.format(self.__class__.__name__, self.name)

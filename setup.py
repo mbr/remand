@@ -35,7 +35,8 @@ setup(
                       'python-debian',
                       'chardet',
                       'future',
-                      'requests', ],
+                      'requests',
+                      'jinja2', ],
     entry_points="""
         [console_scripts]
         remand=remand.cli:cli

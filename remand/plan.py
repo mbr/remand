@@ -10,7 +10,7 @@ import uuid
 import click
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
-from . import config, log
+from . import config, log, info
 from .configfiles import app_dirs
 
 INVALID_CHARS = re.compile('[^A-Za-z0-9_]')
@@ -135,6 +135,10 @@ class TemplateResourceHandler(ResourceHandlerMixin):
                                  'set')
             self._jinja_env = Environment(loader=FileSystemLoader(os.path.join(
                 self.plan.resource_dir, 'templates')))
+
+            # add globals
+            self._jinja_env.globals['config'] = config
+            self._jinja_env.globals['info'] = info
         return self._jinja_env
 
     def _load_item(self, name):

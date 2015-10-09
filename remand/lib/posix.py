@@ -77,7 +77,9 @@ def info_system():
 
 @operation()
 def reboot():
-    if config['remote_os'] in ('unix', 'posix'):
+    if config.get_bool('systemd'):
+        proc.run(config['cmd_systemctl'], 'reboot')
+    elif config['remote_os'] in ('unix', 'posix'):
         proc.run([config['cmd_shutdown'], '-r', 'now'])
     return Changed(msg='Server rebooting')
 

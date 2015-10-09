@@ -277,3 +277,26 @@ def install_source_list(path, name=None, main=False):
         info_update_timestamp().mark_stale()
 
     return op
+
+
+@operation()
+def upgrade(max_age=3600, force=False, dist_upgrade=False):
+    # FIXME: should allow upgrading selected packages
+    update(max_age)
+
+    args = [config['cmd_apt_get']]
+
+    # FIXME: check for upgrades first and output proper changed status
+    args.extend([
+        'upgrade' if not dist_upgrade else 'dist-upgrade',
+        '--quiet',
+        '--yes',
+        # FIXME: options below don't work. why?
+        #'--option', 'Dpkg::Options::="--force-confdef"',
+        #'--option', 'Dpkg::Options::="--force-confold"'
+    ])
+    if force:
+        args.append('--force-yes')
+    proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
+
+    return Changed(msg='Upgraded all packages')

@@ -147,7 +147,8 @@ def query_cache(pkgs):
 
 
 @operation()
-def install_packages(pkgs, check_first=True, release=None, max_age=3600):
+def install_packages(pkgs, check_first=True, release=None, max_age=3600,
+                     force=False):
     if check_first and set(pkgs) < set(info_installed_packages().keys()):
         return Unchanged(msg='Already installed: {}'.format(' '.join(pkgs)))
 
@@ -163,7 +164,10 @@ def install_packages(pkgs, check_first=True, release=None, max_age=3600):
         '--yes',  # FIXME: options below don't work. why?
         #'--option', 'Dpkg::Options::="--force-confdef"',
         #'--option', 'Dpkg::Options::="--force-confold"'
-    ] + list(pkgs), )
+    ])
+    if force:
+        args.append('--force-yes')
+    args.extend(pkgs)
     proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
 
     # FIXME: make this a decorator for info, add "change_invalides" decorator?

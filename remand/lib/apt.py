@@ -299,4 +299,6 @@ def upgrade(max_age=3600, force=False, dist_upgrade=False):
         args.append('--force-yes')
     proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
 
+    info_installed_packages.invalidate_cache()
+
     return Changed(msg='Upgraded all packages')

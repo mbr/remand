@@ -1,6 +1,7 @@
 from collections import namedtuple, OrderedDict
 
 from remand import config, remote
+from remand.exc import RemoteFailureError
 from remand.lib import proc, memoize
 from remand.operation import operation, Unchanged, Changed
 
@@ -78,7 +79,12 @@ def info_system():
 @operation()
 def reboot():
     if config.get_bool('systemd'):
-        proc.run([config['cmd_systemctl'], 'reboot'])
+        try:
+            proc.run([config['cmd_systemctl'], 'reboot'])
+        except RemoteFailureError:
+            # FIXME: should be more discerning; also verify reboot is taking
+            #        place
+            pass  # ignored, as the command will not finish - due to rebooting
     elif config['remote_os'] in ('unix', 'posix'):
         proc.run([config['cmd_shutdown'], '-r', 'now'])
     return Changed(msg='Server rebooting')

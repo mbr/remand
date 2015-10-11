@@ -54,8 +54,9 @@ class CachedRemoteTimestamp(object):
         fs.touch(self.rpath, timestamp)
 
         # update cached values
-        self._current = timestamp
-        self.synced = True
+        if timestamp is not None:
+            self._current = timestamp
+            self.synced = True
         log.debug('Timestamp {} set to {}'.format(self.rpath, self._current))
 
     def get_age(self):

@@ -23,7 +23,7 @@ def install_unit_file(unit_file, reload=True):
     remote_unit = os.path.join(config['systemd_unit_dir'],
                                os.path.basename(unit_file))
 
-    if fs.upload_file('gogs.service', remote_unit).changed:
+    if fs.upload_file(unit_file, remote_unit).changed:
         if reload:
             daemon_reload()
         return Changed(msg='Installed {}'.format(remote_unit))

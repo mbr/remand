@@ -14,6 +14,26 @@ def get_unit_state(unit_name):
 
 
 @operation()
+def ensure_unit(unit_file, enable=True, auto_restart=True):
+    assert unit_file.endswith('.service')
+    service_name = os.path.basename(unit_file)
+
+    changed = install_unit_file(unit_file, reload=True).changed
+
+    # FIXME: check if restart was successful?
+    if auto_restart and changed:
+        restart_unit(service_name)
+
+    if enable:
+        changed |= enable_unit(service_name).changed
+
+    if changed:
+        return Changed(msg='Unit {} updated and restarted')
+
+    return Unchanged(msg='Unit {} already up to date and running')
+
+
+@operation()
 def install_unit_file(unit_file, reload=True):
     base, ext = os.path.splitext(unit_file)
 

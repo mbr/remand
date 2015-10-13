@@ -179,6 +179,53 @@ def install_packages(pkgs, check_first=True, release=None, max_age=3600,
 
 
 @operation()
+def remove_packages(pkgs, check_first=True, purge=False, max_age=3600):
+    if check_first and not set(pkgs).intersection(set(info_installed_packages
+                   ().keys())):
+        return Unchanged(msg='Not installed: {}'.format(' '.join(pkgs)))
+
+    update(max_age)
+
+    args = [config['cmd_apt_get']]
+
+    args.extend([
+        'remove' if not purge else 'purge',
+        '--quiet',
+        '--yes',  # FIXME: options below don't work. why?
+        #'--option', 'Dpkg::Options::="--force-confdef"',
+        #'--option', 'Dpkg::Options::="--force-confold"'
+    ])
+    args.extend(pkgs)
+    proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
+
+    info_installed_packages.invalidate_cache()
+
+    return Changed(msg='{} {}'.format(' '.join('Removed' if not purge
+                   else 'Purged', pkgs)))
+
+
+@operation()
+def auto_remove(max_age=3600):
+    update(max_age)  # FIXME: make max_age become a config setting, add a
+                     #        with_config context manager
+
+    args = [config['cmd_apt_get']]
+    args.extend([
+        'autoremove',
+        '--quiet',
+        '--yes',
+    ])
+    stdout = proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
+
+    if '0 to remove ' in stdout:
+        return Unchanged(msg='No packages auto-removed')
+
+    info_installed_packages.invalidate_cache()
+
+    return Changed(msg='Some packages were auto-removed')
+
+
+@operation()
 def dpkg_install(paths, check=True):
     pkgs = paths
     if not hasattr(paths, 'keys'):

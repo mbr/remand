@@ -215,9 +215,11 @@ def auto_remove(max_age=3600):
         '--quiet',
         '--yes',
     ])
-    stdout = proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
+    stdout, _, _ = proc.run(args, extra_env={'DEBIAN_FRONTEND':
+        'noninteractive',
+    })
 
-    if '0 to remove ' in stdout:
+    if '0 to remove' in stdout:
         return Unchanged(msg='No packages auto-removed')
 
     info_installed_packages.invalidate_cache()

@@ -200,8 +200,8 @@ def remove_packages(pkgs, check_first=True, purge=False, max_age=3600):
 
     info_installed_packages.invalidate_cache()
 
-    return Changed(msg='{} {}'.format(' '.join('Removed' if not purge
-                   else 'Purged', pkgs)))
+    return Changed(msg='{} {}'.format('Removed' if not purge
+                   else 'Purged', ' '.join(pkgs)))
 
 
 @operation()

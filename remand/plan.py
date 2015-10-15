@@ -143,7 +143,7 @@ class TemplateResourceHandler(ResourceHandlerMixin):
 
     def _load_item(self, name):
         try:
-            return self.plan.jinja_env.get_template('name')
+            return self.jinja_env.get_template(name)
         except TemplateNotFound:
             return None
 

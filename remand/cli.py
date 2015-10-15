@@ -90,7 +90,15 @@ def run(obj, plan, uris):
             # instantiate remote
             transport = transport_cls()
             _context.top['remote'] = transport
-            if cfg.get_bool('use_sudo'):
+
+            use_sudo = False
+            if cfg['use_sudo'] == 'auto':
+                if cfg['uri'].user != 'root':
+                    use_sudo = True
+            else:
+                use_sudo = cfg.get_bool('use_sudo')
+
+            if use_sudo:
                 log.debug('using sudo to execute plan')
                 with proc.sudo():
                     plan.execute()

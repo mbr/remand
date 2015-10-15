@@ -11,6 +11,5 @@ class VagrantRemote(SSHRemote):
         config['uri'] = Uri.from_string('ssh://vagrant@127.0.0.1:2222')
         config['ssh_private_key'] = config['vagrant_secret_key']
         config['on_missing_host_key'] = 'ignore'
-        config['use_sudo'] = 'on'
 
         return super(VagrantRemote, self).__init__()

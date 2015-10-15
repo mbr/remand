@@ -1,3 +1,4 @@
+from functools import partial
 import os
 
 from remand import config
@@ -13,12 +14,10 @@ def get_unit_state(unit_name):
     return dict(line.split('=', 1) for line in stdout.splitlines())
 
 
-@operation()
-def ensure_unit(unit_file, enable=True, auto_restart=True):
-    assert unit_file.endswith('.service')
-    service_name = os.path.basename(unit_file)
+def _ensure_unit(service_name, upload_func, enable, auto_restart):
+    assert service_name.endswith('.service')
 
-    changed = install_unit_file(unit_file, reload=True).changed
+    changed = upload_func().changed
 
     # FIXME: check if restart was successful?
     if auto_restart and changed:
@@ -28,9 +27,42 @@ def ensure_unit(unit_file, enable=True, auto_restart=True):
         changed |= enable_unit(service_name).changed
 
     if changed:
-        return Changed(msg='Unit {} updated and restarted')
+        return Changed(
+            msg='Unit {} updated and restarted'.format(service_name))
 
-    return Unchanged(msg='Unit {} already up to date and running')
+    return Unchanged(
+        msg='Unit {} already up to date and running'.format(service_name))
+
+
+@operation()
+def ensure_unit(unit_file, enable=True, auto_restart=True):
+    service_name = os.path.basename(unit_file)
+    upload_func = partial(install_unit_file, unit_file, reload=True)
+    return _ensure_unit(service_name, upload_func, enable, auto_restart)
+
+
+@operation()
+def ensure_unit_string(service_name, buf, enable=True, auto_restart=True):
+    upload_func = partial(install_unit_string, service_name, buf, reload=True)
+    return _ensure_unit(service_name, upload_func, enable, auto_restart)
+
+
+@operation()
+def install_unit_string(unit_name, buf, reload=True):
+    _, ext = os.path.splitext(unit_name)
+
+    if ext not in UNIT_EXTS:
+        raise ValueError('unit_name should be one of {}'.format(UNIT_EXTS))
+
+    remote_unit = os.path.join(config['systemd_unit_dir'],
+                               os.path.basename(unit_name))
+
+    if fs.upload_string(buf, remote_unit).changed:
+        if reload:
+            daemon_reload()
+        return Changed(msg='Installed {}'.format(remote_unit))
+
+    return Unchanged(msg='{} already installed'.format(remote_unit))
 
 
 @operation()

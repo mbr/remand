@@ -28,7 +28,7 @@ setup(
                       'configparser>=3.5.0b2',
                       'stuf',
                       'werkzeug',
-                      'volatile',
+                      'volatile>=1.0',
                       'sshkeys',
                       'paramiko',  # needs our bugfix!
                       # chardet is a hidden dependency of python-debian
@@ -37,6 +37,8 @@ setup(
                       'future',
                       'requests',
                       'jinja2', ],
+    # FIXME: should guarantee that some packages like
+    # volatile are installed
     entry_points="""
         [console_scripts]
         remand=remand.cli:cli

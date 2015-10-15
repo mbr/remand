@@ -9,10 +9,16 @@ from .plan import Plan
 from .lib import InfoManager
 from .remotes.ssh import SSHRemote
 from .remotes.local import LocalRemote
+from .remotes.vagrant import VagrantRemote
 from .uri import Uri
 
+
 # medium-term, this could become a plugin-based solution, if there's need
-all_transports = {'ssh': SSHRemote, 'local': LocalRemote}
+all_transports = {
+    'ssh': SSHRemote,
+    'local': LocalRemote,
+    'vagrant': create_vagrant_remote,
+}
 
 # core logger
 log = logbook.Logger('remand')

@@ -141,6 +141,9 @@ class TemplateResourceHandler(ResourceHandlerMixin):
             self._jinja_env.globals['info'] = info
         return self._jinja_env
 
+    def render(self, name, **kwargs):
+        return self[name].render(**kwargs)
+
     def _load_item(self, name):
         try:
             return self.jinja_env.get_template(name)

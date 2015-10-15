@@ -10,6 +10,9 @@ class TypeConversionMixin(object):
     BOOLEAN_FALSE = ('0', 'no', 'false', 'off')
 
     def get_bool(self, key, default=None):
+        if key not in self:
+            return default
+
         rv = self[key]
 
         if rv in self.BOOLEAN_TRUE:
@@ -18,7 +21,7 @@ class TypeConversionMixin(object):
         if rv in self.BOOLEAN_FALSE:
             return False
 
-        return default
+        raise ValueError('Not a valid boolean value: {}'.format(rv))
 
 
 class TypeConversionChainMap(TypeConversionMixin, ChainMap):

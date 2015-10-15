@@ -6,7 +6,7 @@ from . import _context
 from .configfiles import HostRegistry, load_configuration
 from .exc import RemandError, TransportError
 from .plan import Plan
-from .lib import InfoManager
+from .lib import InfoManager, proc
 from .remotes.ssh import SSHRemote
 from .remotes.local import LocalRemote
 from .remotes.vagrant import VagrantRemote
@@ -91,8 +91,12 @@ def run(obj, plan, uris):
             # instantiate remote
             transport = transport_cls()
             _context.top['remote'] = transport
-
-            plan.execute()
+            if cfg.get_bool('use_sudo'):
+                log.debug('using sudo to execute plan')
+                with proc.sudo():
+                    plan.execute()
+            else:
+                plan.execute()
         except RemandError, e:
             log.error(str(e))
         finally:

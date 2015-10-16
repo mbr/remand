@@ -9,7 +9,7 @@ import threading
 import contextlib2
 import volatile
 
-from .. import remote, log
+from .. import remote, log, keep_context
 
 
 @contextmanager
@@ -38,11 +38,17 @@ def remote_socket():
 @contextmanager
 def local_forward(remote_addr, local_addr=('127.0.0.1', 0)):
     class Handler(SocketServer.BaseRequestHandler):
+        @keep_context
         def handle(self):
-            my_log.debug('New connection to {} from {}'.format(
+            log.debug('New connection to {} from {}'.format(
                 remote_addr, self.request.getpeername()))
 
-            chan = my_remote.tcp_connect(remote_addr)
+            if isinstance(remote_addr, tuple):
+                # remote is a tcp address
+                chan = my_remote.tcp_connect(remote_addr)
+            else:
+                # remote is a unix socket
+                chan = my_remote.unix_connect(remote_addr)
 
             while True:
                 r, _, _ = select.select([self.request, chan], [], [])
@@ -61,7 +67,7 @@ def local_forward(remote_addr, local_addr=('127.0.0.1', 0)):
                         break
                     self.request.send(buf)
 
-            my_log.debug('Closed connection to {} from {}'.format(
+            log.debug('Closed connection to {} from {}'.format(
                 remote_addr, self.request.getpeername()))
 
     with contextlib2.ExitStack() as stack:
@@ -72,17 +78,15 @@ def local_forward(remote_addr, local_addr=('127.0.0.1', 0)):
             if not local_addr:
                 dtmp = stack.enter_context(volatile.dir())
                 local_addr = os.path.join(dtmp, 'remote.sock')
-            server = SocketServer.UnixStreamServer(local_addr, Handler)
+            server = SocketServer.ThreadingUnixStreamServer(local_addr,
+                                                            Handler)
 
         server.allow_reuse_address = False
         server.daemon_threads = True
 
         my_remote = remote._get_current_object()
 
-        # FIXME: is logging thread-safe?
-        my_log = log._get_current_object()
-
-        t = threading.Thread(target=server.serve_forever)
+        t = threading.Thread(target=keep_context(server.serve_forever))
         t.daemon = True
         t.start()
 
@@ -95,4 +99,5 @@ def local_forward(remote_addr, local_addr=('127.0.0.1', 0)):
 
         log.debug('Forward established: {} => {}'.format(
             server.server_address, remote_addr))
+
         yield server.server_address

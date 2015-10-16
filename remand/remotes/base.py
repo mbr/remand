@@ -220,6 +220,16 @@ class Remote(object):
         """
         raise NotImplementedError
 
+    def unix_connect(self, addr):
+        """Open a unix domain socket connection from the remote.
+
+        This method must be callable from threads other than the remote's own.
+
+        :param addr: Destination address to connect to.
+        :return: A socket-like object.
+        """
+        raise NotImplementedError
+
     def unlink(self, path):
         """Remove a file.
 

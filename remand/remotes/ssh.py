@@ -412,6 +412,36 @@ class SSHRemote(Remote):
         raise NotImplementedError('Currently, the SSH transport does not '
                                   'support setting the umask')
 
+    def unix_connect(self, addr):
+        # FIXME: this could work directly on OpenSSH 6.7+
+        if not config['cmd_nc-openbsd']:
+            raise ValueError('cmd.nc-openbsd is required for unix socket '
+                             'connections via SSH')
+        p = self.popen([config['cmd_nc-openbsd'], '-U', addr])
+
+        class _UnixSockWrap(object):
+            def __init__(self, proc):
+                self._proc = proc
+
+            def recv(self, n):
+                return self._proc.stdout.read(n)
+
+            def send(self, buf):
+                self._proc.stdin.write(buf)
+                return len(buf)
+
+            sendall = send
+
+            def close(self):
+                self._proc.stdin.close()
+                self._proc.stdout.close()
+                self._proc.stderr.close()
+
+            def fileno(self):
+                return self._proc._channel.fileno()
+
+        return _UnixSockWrap(p)
+
     @wrap_sftp_errors
     def unlink(self, path):
         return self._sftp.unlink(path)

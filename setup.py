@@ -31,6 +31,7 @@ setup(
                       'volatile>=1.1',
                       'sshkeys',
                       'paramiko',  # needs our bugfix!
+                      'sqlalchemy',
                       'contextlib2',
                       # chardet is a hidden dependency of python-debian
                       'python-debian',

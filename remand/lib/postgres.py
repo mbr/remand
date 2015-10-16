@@ -4,6 +4,7 @@ import os
 from contextlib2 import ExitStack
 from sqlalchemy import create_engine
 from sqlalchemy.engine.url import URL
+from sqlalchemy.sql.expression import text
 import volatile
 
 from . import proc
@@ -21,12 +22,14 @@ class PostgreSQL(object):
                  user='postgres',
                  database='postgres',
                  password=None,
-                 ident='postgres'):
+                 ident='postgres',
+                 echo=True):
         self.remote_addr = remote_addr
         self.user = user
         self.database = database
         self.password = password
         self.ident = ident
+        self.echo = echo
 
     def abort_transaction(self):
         raise AbortTransaction()
@@ -48,7 +51,7 @@ class PostgreSQL(object):
                 database=self.database,
                 query={'host': dtmp})
 
-            engine = create_engine(url)
+            engine = create_engine(url, echo=self.echo)
             yield engine
 
     @contextmanager
@@ -66,3 +69,12 @@ class PostgreSQL(object):
                 raise
             else:
                 trans.commit()
+
+
+# FIXME: maybe this needs a full blown reflection/support for the postgres
+# schema
+def get_role(con, name):
+    res = con.execute(text('SELECT * FROM pg_roles WHERE rolname = :name'),
+                      name=name)
+
+    return res

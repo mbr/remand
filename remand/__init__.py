@@ -1,4 +1,4 @@
-from functools import partial
+from functools import partial, wraps
 
 #import pluginbase
 
@@ -14,6 +14,18 @@ def _lookup_context(name):
         raise RuntimeError('No current context. Did you forget to put your '
                            'module code inside a run() method?')
     return top[name]
+
+
+def keep_context(f):
+    # allows keeping a context that is thread local between threads
+    snapshot = _context.top.copy()
+
+    @wraps(f)
+    def _(*args, **kwargs):
+        _context.push(snapshot)
+        return f(*args, **kwargs)
+
+    return _
 
 
 _context = LocalStack()

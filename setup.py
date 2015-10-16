@@ -28,9 +28,10 @@ setup(
                       'configparser>=3.5.0b2',
                       'stuf',
                       'werkzeug',
-                      'volatile>=1.0',
+                      'volatile>=1.1',
                       'sshkeys',
                       'paramiko',  # needs our bugfix!
+                      'contextlib2',
                       # chardet is a hidden dependency of python-debian
                       'python-debian',
                       'chardet',

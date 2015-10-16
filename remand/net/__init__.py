@@ -1,9 +1,13 @@
 from __future__ import absolute_import
 
 from contextlib import contextmanager
+import os
 import SocketServer
 import select
 import threading
+
+import contextlib2
+import volatile
 
 from .. import remote, log
 
@@ -60,23 +64,35 @@ def local_forward(remote_addr, local_addr=('127.0.0.1', 0)):
             my_log.debug('Closed connection to {} from {}'.format(
                 remote_addr, self.request.getpeername()))
 
-    server = SocketServer.ThreadingTCPServer(local_addr, Handler)
-    server.daemon_threads = True
-    server.allow_reuse_address = False
+    with contextlib2.ExitStack() as stack:
+        if isinstance(local_addr, tuple):
+            server = SocketServer.ThreadingTCPServer(local_addr, Handler)
+        else:
+            # assume its a string, denoting a unix domain socket
+            if not local_addr:
+                dtmp = stack.enter_context(volatile.dir())
+                local_addr = os.path.join(dtmp, 'remote.sock')
+            server = SocketServer.UnixStreamServer(local_addr, Handler)
 
-    my_remote = remote._get_current_object()
+        server.allow_reuse_address = False
+        server.daemon_threads = True
 
-    # FIXME: is logging thread-safe?
-    my_log = log._get_current_object()
+        my_remote = remote._get_current_object()
 
-    t = threading.Thread(target=server.serve_forever)
-    t.daemon = True
-    t.start()
+        # FIXME: is logging thread-safe?
+        my_log = log._get_current_object()
 
-    log.debug('Forward established: {0[0]}:{0[1]} => {1[0]}:{1[1]}'.format(
-        server.server_address, remote_addr))
-    yield server.server_address
+        t = threading.Thread(target=server.serve_forever)
+        t.daemon = True
+        t.start()
 
-    log.debug(
-        'Waiting for shutdown of {0[0]}:{0[1]}'.format(server.server_address))
-    server.shutdown()
+        # wait for the server to shutdown
+        stack.callback(t.join)
+        stack.callback(server.shutdown)
+        stack.callback(
+            log.debug,
+            'Waiting for shutdown of {}'.format(server.server_address))
+
+        log.debug('Forward established: {} => {}'.format(
+            server.server_address, remote_addr))
+        yield server.server_address

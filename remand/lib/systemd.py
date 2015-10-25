@@ -114,6 +114,16 @@ def start_unit(unit_name):
 
 
 @operation()
+def stop_unit(unit_name):
+    state = get_unit_state(unit_name)
+    if state['ActiveState'] == 'stopped':
+        return Unchanged(msg='{} already stopped'.format(unit_name))
+
+    proc.run([config['cmd_systemctl'], 'stop', unit_name])
+    return Changed(msg='Stopped {}'.format(unit_name))
+
+
+@operation()
 def restart_unit(unit_name):
     proc.run([config['cmd_systemctl'], 'restart', unit_name])
     return Changed(msg='Restarted {}'.format(unit_name))

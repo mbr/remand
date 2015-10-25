@@ -94,6 +94,16 @@ def enable_unit(unit_name):
 
 
 @operation()
+def disable_unit(unit_name):
+    state = get_unit_state(unit_name)
+    if state['UnitFileState'] == 'disabled':
+        return Unchanged(msg='{} already disabled'.format(unit_name))
+
+    proc.run([config['cmd_systemctl'], 'disable', unit_name])
+    return Changed(msg='Disabled {}'.format(unit_name))
+
+
+@operation()
 def start_unit(unit_name):
     state = get_unit_state(unit_name)
     if state['ActiveState'] == 'started':

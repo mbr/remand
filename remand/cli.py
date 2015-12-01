@@ -117,9 +117,13 @@ def run(obj, plan, uris):
 
 FILE_TPL = """{project}.webfiles.add_url(
     {fn!r},
-    ({url!r},
-     '{hashfunc}',
-     '{hexdigest}')"""
+    {url!r},
+    '{hashfunc}',
+    '{hexdigest}')
+)"""
+
+# FIXME: a better way would be to cache the file immediately, instead of
+#        offering -o and -O
 
 
 @cli.command(help='Downloads a file and generates embedding code')

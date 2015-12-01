@@ -1,6 +1,11 @@
+import hashlib
+import os
+
 import click
 import logbook
 from logbook.more import ColorizedStderrHandler
+import requests
+from six.moves.urllib.parse import urlparse
 
 from . import _context
 from .configfiles import HostRegistry, load_configuration
@@ -82,8 +87,8 @@ def run(obj, plan, uris):
 
             transport_cls = all_transports.get(cfg['uri'].transport, None)
             if not transport_cls:
-                raise TransportError('Unknown transport: {}'.format(
-                    cfg['uri']))
+                raise TransportError('Unknown transport: {}'.format(cfg[
+                    'uri']))
 
             log.notice('Executing {} on {}'.format(plan, cfg['uri']))
 
@@ -108,3 +113,43 @@ def run(obj, plan, uris):
             log.error(str(e))
         finally:
             _context.pop()
+
+
+FILE_TPL = """{project}.webfiles.add_url(
+    {fn!r},
+    ({url!r},
+     '{hashfunc}',
+     '{hexdigest}')"""
+
+
+@cli.command(help='Downloads a file and generates embedding code')
+@click.argument('url')
+@click.option('--output', '-o', type=click.Path(), default=None)
+@click.option('--hashfunc', default='sha256')
+@click.option('--project', '-p', default='project')
+def download_file(url, output, hashfunc, project):
+    u = urlparse(url)
+    if not output:
+        output = u.path.rsplit('/', 1)[-1]
+
+    h = getattr(hashlib, hashfunc)()
+    print url
+    fn = os.path.basename(output)
+
+    r = requests.get(url, stream=True)
+    r.raise_for_status()
+
+    with open(output, 'wb') as out:
+        for chunk in r.iter_content(4096):
+            h.update(chunk)
+            out.write(chunk)
+
+    log.info('Downloading {} to {}...'.format(url, output))
+    # FIXME: wrap requests here or write generic download widget that can
+    #        display a progressbar for all kinds of downloads
+
+    click.echo(FILE_TPL.format(fn=fn,
+                               url=url,
+                               hashfunc=hashfunc,
+                               hexdigest=h.hexdigest(),
+                               project=project))

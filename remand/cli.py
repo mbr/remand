@@ -128,11 +128,16 @@ FILE_TPL = """{project}.webfiles.add_url(
 
 @cli.command(help='Downloads a file and generates embedding code')
 @click.argument('url')
+@click.option('--save', '-O', is_flag=True)
 @click.option('--output', '-o', type=click.Path(), default=None)
 @click.option('--hashfunc', default='sha256')
 @click.option('--project', '-p', default='project')
-def download_file(url, output, hashfunc, project):
+def download_file(url, output, hashfunc, project, save):
     u = urlparse(url)
+
+    if output:
+        save = True
+
     if not output:
         output = u.path.rsplit('/', 1)[-1]
 
@@ -143,10 +148,18 @@ def download_file(url, output, hashfunc, project):
     r = requests.get(url, stream=True)
     r.raise_for_status()
 
-    with open(output, 'wb') as out:
+    out = None
+    if save:
+        out = open(output, 'wb')
+
+    try:
         for chunk in r.iter_content(4096):
             h.update(chunk)
-            out.write(chunk)
+            if out:
+                out.write(chunk)
+    finally:
+        if out:
+            out.close()
 
     log.info('Downloading {} to {}...'.format(url, output))
     # FIXME: wrap requests here or write generic download widget that can

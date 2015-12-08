@@ -119,7 +119,7 @@ FILE_TPL = """{project}.webfiles.add_url(
     {fn!r},
     {url!r},
     '{hashfunc}',
-    '{hexdigest}')
+    '{hexdigest}'
 )"""
 
 # FIXME: a better way would be to cache the file immediately, instead of

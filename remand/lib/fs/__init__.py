@@ -5,9 +5,9 @@ from stat import S_ISDIR, S_ISLNK, S_ISREG
 
 from remand import remote, config, log
 from remand.lib import proc
-from remand.exc import (ConfigurationError, RemoteFailureError,
-                        RemoteFileDoesNotExistError,
-                        RemotePathIsNotADirectoryError)
+from remand.exc import (
+    ConfigurationError, RemoteFailureError, RemoteFileDoesNotExistError,
+    RemotePathIsNotADirectoryError, RemotePathIsNotALinkError)
 
 from remand.operation import operation, Changed, Unchanged
 import volatile
@@ -48,8 +48,8 @@ def _expand_remote_dest(local_path, remote_path):
 
     # ensure st is either non-existant, or a regular file
     if st and not S_ISREG(st.st_mode):
-        raise RemoteFailureError(
-            'Not a regular file: {!r}'.format(remote_path))
+        raise RemoteFailureError('Not a regular file: {!r}'.format(
+            remote_path))
     return st, remote_path
 
 
@@ -236,6 +236,34 @@ def remove_dir(remote_path, recursive=True):
         remote.rmdir(dirpath)
 
     return Changed(msg=u'Removed directory: {}'.format(remote_path))
+
+
+@operation()
+def symlink(src, dst):
+    if dst.endswith('/'):
+        raise NotImplementedError('Creating link inside directory not '
+                                  'implemented')
+    lst = remote.lstat(dst)
+
+    if lst:
+        if not S_ISLNK(lst.st_mode):
+            raise RemotePathIsNotALinkError('Already exists and not a link: '
+                                            '{}'.format(dst))
+
+        # remote is a link
+        rsrc = remote.readlink(dst)
+        if rsrc == src:
+            return Unchanged(msg='Unchanged link: {} -> {}'.format(dst, src))
+
+        # we need to update the link, unfortunately, this is often not possible
+        # atomically
+        remote.unlink(dst)
+        remote.symlink(src, dst)
+        return Changed(msg='Changed link: {} -> {} (previously -> {})'
+                       .format(dst, src, rsrc))
+
+    remote.symlink(src, dst)
+    return Changed(msg='Created link: {} -> {}'.format(dst, src))
 
 
 @operation()

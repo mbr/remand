@@ -378,8 +378,8 @@ def upload_string(buf, remote_path, create_parent=False):
         if create_parent:
             create_dir(remote.path.dirname(remote_path))
         uploader.upload_buffer(buf, remote_path)
-        return Changed(
-            msg='Upload buffer ({}) -> {}'.format(len(buf), remote_path))
+        return Changed(msg='Upload buffer ({}) -> {}'.format(
+            len(buf), remote_path))
 
     return Unchanged(msg='File up-to-date: {}'.format(remote_path))
 

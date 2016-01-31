@@ -88,8 +88,8 @@ def info_dpkg_architecture():
 
 @memoize()
 def info_dpkg_foreign_architectures():
-    stdout, _, _ = proc.run(
-        [config['cmd_dpkg'], '--print-foreign-architectures'])
+    stdout, _, _ = proc.run([config['cmd_dpkg'],
+                             '--print-foreign-architectures'])
     return stdout.splitlines()
 
 
@@ -148,7 +148,10 @@ def query_cache(pkgs):
 
 
 @operation()
-def install_packages(pkgs, check_first=True, release=None, max_age=3600,
+def install_packages(pkgs,
+                     check_first=True,
+                     release=None,
+                     max_age=3600,
                      force=False):
     if check_first and set(pkgs) < set(info_installed_packages().keys()):
         return Unchanged(msg='Already installed: {}'.format(' '.join(pkgs)))
@@ -180,8 +183,8 @@ def install_packages(pkgs, check_first=True, release=None, max_age=3600,
 
 @operation()
 def remove_packages(pkgs, check_first=True, purge=False, max_age=3600):
-    if check_first and not set(pkgs).intersection(set(info_installed_packages
-                   ().keys())):
+    if check_first and not set(pkgs).intersection(set(info_installed_packages(
+    ).keys())):
         return Unchanged(msg='Not installed: {}'.format(' '.join(pkgs)))
 
     update(max_age)
@@ -200,24 +203,19 @@ def remove_packages(pkgs, check_first=True, purge=False, max_age=3600):
 
     info_installed_packages.invalidate_cache()
 
-    return Changed(msg='{} {}'.format('Removed' if not purge
-                   else 'Purged', ' '.join(pkgs)))
+    return Changed(msg='{} {}'.format('Removed' if not purge else 'Purged',
+                                      ' '.join(pkgs)))
 
 
 @operation()
 def auto_remove(max_age=3600):
     update(max_age)  # FIXME: make max_age become a config setting, add a
-                     #        with_config context manager
+    #        with_config context manager
 
     args = [config['cmd_apt_get']]
-    args.extend([
-        'autoremove',
-        '--quiet',
-        '--yes',
-    ])
-    stdout, _, _ = proc.run(args, extra_env={'DEBIAN_FRONTEND':
-        'noninteractive',
-    })
+    args.extend(['autoremove', '--quiet', '--yes', ])
+    stdout, _, _ = proc.run(args,
+                            extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
 
     if '0 to remove' in stdout:
         return Unchanged(msg='No packages auto-removed')
@@ -246,8 +244,8 @@ def dpkg_install(paths, check=True):
                                  'version by passing a dictionary parameter.')
 
     # log names
-    log.debug('Package names: ' + ', '.join('{} -> {}'.format(k, v) for k, v in
-                                            pkgs.items()))
+    log.debug('Package names: ' + ', '.join('{} -> {}'.format(k, v)
+                                            for k, v in pkgs.items()))
 
     if check:
         missing = []
@@ -301,11 +299,10 @@ def dpkg_add_architecture(arch):
 
 @operation()
 def install_preference(path, name=None):
-    op = fs.upload_file(
-        path,
-        remote.path.join(config['apt_preferences_d'], name or
-                         os.path.basename(path)),
-        create_parent=True)
+    op = fs.upload_file(path,
+                        remote.path.join(config['apt_preferences_d'], name or
+                                         os.path.basename(path)),
+                        create_parent=True)
 
     if op.changed:
         info_update_timestamp().mark_stale()
@@ -324,11 +321,10 @@ def install_source_list(path, name=None, main=False):
                             create_parent=True)
 
     else:
-        op = fs.upload_file(
-            path,
-            remote.path.join(config['apt_sources_list_d'], name or
-                             os.path.basename(path)),
-            create_parent=True)
+        op = fs.upload_file(path,
+                            remote.path.join(config['apt_sources_list_d'],
+                                             name or os.path.basename(path)),
+                            create_parent=True)
 
     if op.changed:
         info_update_timestamp().mark_stale()

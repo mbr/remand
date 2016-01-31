@@ -236,7 +236,14 @@ def dpkg_install(paths, check=True):
         # determine package names from filenames
         for p in paths:
             fn = os.path.basename(p)
-            pkgs[fn[:fn.index('_')]] = p
+            try:
+                pkgs[fn[:fn.index('_')]] = p
+            except ValueError:
+                raise ValueError('Could not determine package version from '
+                                 'package filename. Please rename the .deb '
+                                 'to standard debian convention '
+                                 '(name_version.deb) or supply a specific '
+                                 'version by passing a dictionary parameter.')
 
     # log names
     log.debug('Package names: ' + ', '.join('{} -> {}'.format(k, v) for k, v in

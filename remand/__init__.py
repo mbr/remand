@@ -28,3 +28,10 @@ config = LocalProxy(partial(_lookup_context, 'config'))
 log = LocalProxy(partial(_lookup_context, 'log'))
 info = LocalProxy(partial(_lookup_context, 'info'))
 current_plan = LocalProxy(partial(_lookup_context, 'current_plan'))
+
+# public API:
+
+# warning: wacky circular import
+from .plan import Plan
+
+__all__ = ['remote', 'config', 'log', 'info', 'current_plan', 'Plan']

@@ -1,10 +1,4 @@
 from functools import partial, wraps
-
-#import pluginbase
-
-#plugin_base = pluginbase.PluginBase(package='remand.plugins')
-
-# globals
 from werkzeug.local import LocalStack, LocalProxy
 
 

@@ -36,6 +36,10 @@ APP_NAME = 'remand'
               help='Output more debugging information',
               is_flag=True,
               default=False)
+@click.option('--pkg-path',
+              '-L',
+              multiple=True,
+              help='Additional search paths for pkgs')
 @click.option('configfiles',
               '--config',
               '-c',
@@ -43,7 +47,12 @@ APP_NAME = 'remand'
               type=click.Path(),
               help='Additional configuration files to read')
 @click.pass_context
-def cli(context, configfiles, debug):
+def cli(context, pkg_path, configfiles, debug):
+    # pluginbase is imported here because just importing it breaks Crypto
+    # (and with it paramiko)
+    import pluginbase
+    plugin_base = pluginbase.PluginBase(package='remand.pkg')
+
     obj = context.obj = {}
     handler = ColorizedStderrHandler(
         level=logbook.DEBUG if debug else logbook.INFO)
@@ -55,13 +64,19 @@ def cli(context, configfiles, debug):
     obj['config'] = load_configuration(APP_NAME, configfiles)
     obj['hosts'] = HostRegistry(obj['config'])
 
+    plugin_source = plugin_base.make_plugin_source(
+        searchpath=list(pkg_path) + ['.'])
+    obj['plugin_source'] = plugin_source
+
 
 @cli.command(help='Runs a plan on a number of servers')
 @click.argument('plan', type=click.Path(exists=True))
 @click.argument('uris', default=None, nargs=-1, type=Uri.from_string)
 @click.pass_obj
 def run(obj, plan, uris):
-    plan = Plan.load_from_file(plan)
+    with obj['plugin_source']:
+        plan = Plan.load_from_file(plan)
+
     # load plan
     for uri in uris:
         _context.push({})

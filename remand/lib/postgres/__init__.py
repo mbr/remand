@@ -1,15 +1,18 @@
 from contextlib import contextmanager
 import os
+import warnings
 
 from contextlib2 import ExitStack
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, exc as sa_exc
 from sqlalchemy.engine.url import URL
 from sqlalchemy.sql.expression import text
+from sqlalchemy.orm import sessionmaker
+import sqlalchemy_pgcatalog as sc
 import volatile
 
-from . import proc
-from ..operation import operation
-from .. import net
+from .. import proc
+from ...operation import operation
+from ... import net
 
 
 class AbortTransaction(Exception):
@@ -23,7 +26,7 @@ class PostgreSQL(object):
                  database='postgres',
                  password=None,
                  ident='postgres',
-                 echo=True):
+                 echo=False):
         self.remote_addr = remote_addr
         self.user = user
         self.database = database
@@ -70,11 +73,38 @@ class PostgreSQL(object):
             else:
                 trans.commit()
 
+    @contextmanager
+    def session(self):
+        with self.db_engine() as engine:
+            session = sessionmaker(bind=engine)()
+            try:
+                yield session
+                session.commit()
+            except:
+                session.rollback()
+                raise
+            finally:
+                session.close()
 
-# FIXME: maybe this needs a full blown reflection/support for the postgres
-# schema
-def get_role(con, name):
-    res = con.execute(text('SELECT * FROM pg_roles WHERE rolname = :name'),
-                      name=name)
 
-    return res
+class Manager(object):
+    def __init__(self, session):
+        self.session = session
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=sa_exc.SAWarning)
+            sc.prepare(self.session.bind)
+
+    def update_role(self, name):
+        r = self.session.query(sc.Role).filter_by(rolname=name).first()
+
+        if r:
+            print 'FOUND'
+
+        return r
+
+    def list_roles(self):
+        return self.session.query(sc.Role).all()
+
+    def commit(self):
+        self.session.commit()

@@ -129,6 +129,9 @@ def run(obj, plan, uris):
         finally:
             _context.pop()
 
+    if not uris:
+        log.notice('Nothing to do; no URIs given')
+
 
 FILE_TPL = """{project}.webfiles.add_url(
     {fn!r},

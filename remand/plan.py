@@ -183,6 +183,8 @@ class Plan(object):
                                      self.objectives)))
 
             objective = self.objectives.values()[0]
+        else:
+            objective = self.objectives[objective]
 
         # got our objective, now run it
 

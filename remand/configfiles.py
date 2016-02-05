@@ -62,5 +62,10 @@ class HostRegistry(object):
             self.host_res.append((re.compile(pattern + '$'), sect))
 
     def get_config_for_host(self, hostname):
-        return TypeConversionChainMap(*[sect for exp, sect in self.host_res
-                                        if exp.match(hostname)])
+        matching_sects = [sect
+                          for exp, sect in self.host_res
+                          if exp.match(hostname)]
+
+        # use sections in reverse so that sections further down overwrite
+        # those defined earlier
+        return TypeConversionChainMap(*reversed(matching_sects))

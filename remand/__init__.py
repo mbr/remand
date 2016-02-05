@@ -33,5 +33,7 @@ current_plan = LocalProxy(partial(_lookup_context, 'current_plan'))
 
 # warning: wacky circular import
 from .plan import Plan
+from .operation import operation, Changed, Unchanged
 
-__all__ = ['remote', 'config', 'log', 'info', 'current_plan', 'Plan']
+__all__ = ['remote', 'config', 'log', 'info', 'current_plan', 'Plan',
+           'operation', 'Changed', 'Unchanged']

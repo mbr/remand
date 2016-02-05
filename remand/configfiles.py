@@ -26,7 +26,8 @@ def load_configuration(app_name, configfiles=[]):
     :param configfiles: Additional configuration files to read.
     """
     fns = [
-        os.path.join(os.path.dirname(__file__), 'defaults.cfg'),
+        os.path.join(
+            os.path.dirname(__file__), 'defaults.cfg'),
         os.path.join(app_dirs.user_config_dir, 'config.ini'),
     ]
 

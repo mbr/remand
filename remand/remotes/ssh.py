@@ -37,19 +37,19 @@ class WarnAutoAddPolicy(AutoAddPolicy):
     def missing_host_key(self, client, hostname, key):
         log.warning('Missing hostkey for {} ignored (fingerprint is {}).'
                     .format(hostname, format_key(key)))
-        return super(WarnAutoAddPolicy, self).missing_host_key(
-            client, hostname, key)
+        return super(WarnAutoAddPolicy, self).missing_host_key(client,
+                                                               hostname, key)
 
 
 class AskToAddPolicy(MissingHostKeyPolicy):
-    _UNKNOWN_WARNING = (
-        "The authenticity of host '{}' can't be established.\n"
-        "{} key fingerprint is {}.")
+    _UNKNOWN_WARNING = ("The authenticity of host '{}' can't be established.\n"
+                        "{} key fingerprint is {}.")
     _USER_PROMPT = "Are you sure you want to continue connecting?"
 
     def missing_host_key(self, client, hostname, key):
-        click.echo(self._UNKNOWN_WARNING.format(
-            hostname, key.get_name(), format_key(key), ))
+        click.echo(self._UNKNOWN_WARNING.format(hostname,
+                                                key.get_name(),
+                                                format_key(key), ))
         if not click.confirm(self._USER_PROMPT):
             raise TransportError('User declined to connect to unknown host')
 
@@ -66,8 +66,8 @@ class AskToSavePolicy(AskToAddPolicy):
 
         if client._host_keys_filename is not None:
             client.save_host_keys(client._host_keys_filename)
-            log.info('Added {} host key for {}: {}'.format(
-                key.get_name(), hostname, format_key(key)))
+            log.info('Added {} host key for {}: {}'.format(key.get_name(
+            ), hostname, format_key(key)))
         else:
             log.warning('Did not save host, no known_hosts file loaded.')
 
@@ -101,9 +101,8 @@ def wrap_sftp_errors(f):
         try:
             return f(*args, **kwargs)
         except IOError, e:
-            fargs = ', '.join(
-                map(repr, args[1:]) + ['{}={!r}'.format(*v) for v in
-                                       kwargs.items()])
+            fargs = ', '.join(map(repr, args[1:]) + ['{}={!r}'.format(*v)
+                                                     for v in kwargs.items()])
             if e.errno == 2:
                 raise RemoteFileDoesNotExistError(str(e))
             raise RemoteFailureError('SFTP Failed {}({}): {}'.format(
@@ -235,13 +234,16 @@ class SSHRemote(Remote):
                 password=uri.password,
                 key_filename=config['ssh_private_key'] or None)
         except BadHostKeyException, e:
-            raise TransportError(_BAD_KEY_ERROR.format(
-                e.key.get_name(), format_key(e.key), e.expected_key.get_name(
-                ), format_key(e.expected_key), ssh_host_name(uri), ))
+            raise TransportError(
+                _BAD_KEY_ERROR.format(e.key.get_name(),
+                                      format_key(e.key),
+                                      e.expected_key.get_name(),
+                                      format_key(e.expected_key),
+                                      ssh_host_name(uri), ))
         except SSHException, e:
             if 'not found in known_hosts' in e.message:
-                raise TransportError(_KNOWN_HOSTS_ERROR.format(
-                    ssh_host_name(uri)))
+                raise TransportError(_KNOWN_HOSTS_ERROR.format(ssh_host_name(
+                    uri)))
             raise
 
         log.debug('SSH connection established')
@@ -268,9 +270,8 @@ class SSHRemote(Remote):
             try:
                 ts, _ = p_ts.communicate()
             except IOError as e:
-                log.warning(
-                    'Could not verify remote time. '
-                    'Is the date binary missing?')
+                log.warning('Could not verify remote time. '
+                            'Is the date binary missing?')
             timestamp = int(ts)
             time_diff = timestamp - local_timestamp
             log.debug('Local time: {} Remote time: {} Diff: {}'.format(
@@ -350,8 +351,8 @@ class SSHRemote(Remote):
 
     @wrap_sftp_errors
     def popen(self, args, cwd=None, extra_env={}):
-        envvars = ['{}={}'.format(shlex_quote(k), shlex_quote(v))
-                   for k, v in extra_env.items()]
+        envvars = ['{}={}'.format(
+            shlex_quote(k), shlex_quote(v)) for k, v in extra_env.items()]
         chdir = ''
 
         if cwd is not None:
@@ -367,10 +368,9 @@ class SSHRemote(Remote):
         log.debug('Executing {}'.format(cmd))
         stdin, stdout, stderr = self._client.exec_command(cmd, timeout=timeout)
 
-        return SSHRemoteProcess(
-            stdin=_ShutdownWrap(stdin, 1),
-            stdout=_ShutdownWrap(stdout, 0),
-            stderr=_ShutdownWrap(stderr, 0), )
+        return SSHRemoteProcess(stdin=_ShutdownWrap(stdin, 1),
+                                stdout=_ShutdownWrap(stdout, 0),
+                                stderr=_ShutdownWrap(stderr, 0), )
 
     @wrap_sftp_errors
     def rmdir(self, path):

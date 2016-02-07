@@ -1,16 +1,10 @@
-import sys
-if sys.version_info.major < 3:
-    from backports.configparser import ConfigParser
-else:
-    from configparser import ConfigParser
 import os
 import re
 
 from appdirs import AppDirs
-import click
 import logbook
 
-from .util import TypeConversionChainMap
+from .util import TypeConversionChainMap, ConfigParser
 
 log = logbook.Logger('config')
 app_dirs = AppDirs('remand', False)

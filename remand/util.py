@@ -1,8 +1,14 @@
 from functools import partial
+import sys
 
 import hashlib
 
 from stuf.collects import ChainMap
+
+if sys.version_info.major < 3:
+    from backports.configparser import ConfigParser
+else:
+    from configparser import ConfigParser
 
 
 class TypeConversionMixin(object):

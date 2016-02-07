@@ -6,7 +6,6 @@ import os
 import re
 import requests
 import uuid
-import sys
 
 import click
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound

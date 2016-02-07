@@ -6,12 +6,14 @@ import os
 import re
 import requests
 import uuid
+import sys
 
 import click
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 from . import config, log, info
 from .configfiles import app_dirs
+from .util import ConfigParser
 
 INVALID_CHARS = re.compile('[^A-Za-z0-9_]')
 
@@ -64,6 +66,30 @@ class WebResourceHandler(ResourceHandlerMixin):
     def __init__(self, plan, attr_name):
         super(WebResourceHandler, self).__init__(plan, attr_name)
         self.urls = {}
+
+    def _load_from_ini(self, plan):
+        # load webfiles
+        ini_file = os.path.join(plan.resource_dir, 'webfiles.ini')
+
+        if os.path.exists(ini_file):
+            web_ini = ConfigParser()
+            web_ini.read(ini_file)
+
+            for fn in web_ini.sections():
+                section = dict(web_ini.items(fn))
+
+                url = section['url']
+                hashtype, hashsum = None, None
+
+                if 'sha1' in section:
+                    hashtype = 'sha1'
+                    hashsum = section['sha1']
+
+                if 'sha256' in section:
+                    hashtype = 'sha256'
+                    hashsum = section['sha256']
+
+                self.add_url(fn, url, hashtype, hashsum)
 
     @property
     def storage(self):
@@ -164,6 +190,10 @@ class Plan(object):
         self.files = FileResourceHandler(self, 'files')
         self.webfiles = WebResourceHandler(self, 'webfiles')
         self.templates = TemplateResourceHandler(self, 'templates')
+
+        # FIXME: this needs cleanup, badly
+        if self.resource_dir:
+            self.webfiles._load_from_ini(self)
 
     def __repr__(self):
         return '{}({!r})'.format(self.__class__.__name__, self.name)

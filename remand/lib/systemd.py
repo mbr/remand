@@ -15,7 +15,8 @@ def get_unit_state(unit_name):
 
 
 def _ensure_unit(service_name, upload_func, enable, auto_restart):
-    assert service_name.endswith('.service')
+    # FIXME: we also support sockets!
+    # assert service_name.endswith('.service')
 
     changed = upload_func().changed
 

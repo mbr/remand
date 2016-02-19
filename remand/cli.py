@@ -59,7 +59,7 @@ def cli(context, pkg_path, configfiles, debug):
     # pluginbase is imported here because just importing it breaks Crypto
     # (and with it paramiko)
     import pluginbase
-    plugin_base = pluginbase.PluginBase(package='remand.pkg')
+    plugin_base = pluginbase.PluginBase(package='remand.ext')
 
     obj = context.obj = {}
     handler = ColorizedStderrHandler(

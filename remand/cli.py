@@ -52,6 +52,10 @@ def cli(context, pkg_path, configfiles, debug):
     if 'REMAND_PKG_PATH' in os.environ:
         pkg_path.extend(os.environ['REMAND_PKG_PATH'].split(os.pathsep))
 
+    # add contrib to pkg path
+    import remand.contrib as contrib
+    pkg_path.append(os.path.abspath(os.path.dirname(contrib.__file__)))
+
     # pluginbase is imported here because just importing it breaks Crypto
     # (and with it paramiko)
     import pluginbase

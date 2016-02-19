@@ -1,5 +1,6 @@
 from collections import OrderedDict, namedtuple
 import os
+import subprocess
 import time
 
 from debian.deb822 import Deb822
@@ -104,6 +105,47 @@ def info_installed_packages():
         pkgs[rec.name] = rec
 
     return pkgs
+
+
+@operation()
+def add_apt_keys(key_filename, fingerprints=None):
+    def get_fingerprints(buf):
+        PREFIX = 'Key fingerprint = '
+
+        fps = set()
+        for line in buf.splitlines():
+            line = line.strip()
+            if line.startswith(PREFIX):
+                fps.add(line[len(PREFIX):].replace(' ', ''))
+        return fps
+
+    def id_from_fingerprint(fp):
+        return fp[-8:]
+
+    if fingerprints is None:
+        # first, we need to list all keys in the keyfile.
+        # FIXME: allow use of remote gpg
+        output = subprocess.check_output(
+            ['gpg', '--with-fingerprint'],
+            stdin=open(key_filename, 'r'))
+
+        # FIXME: is utf8 the right call here?
+        fingerprints = get_fingerprints(output.decode('utf8'))
+
+    # check if key fingerprints are missing
+    local_fps = fingerprints
+    remote_fps = get_fingerprints(proc.run(['apt-key', 'fingerprints'])[0])
+    missing_fps = local_fps.difference(remote_fps)
+
+    if missing_fps:
+        with open(key_filename, 'r') as k:
+            proc.run(['apt-key', 'add', '-'], input=k)
+
+        return Changed(msg='Added missing apt keys: {}'.format(', '.join(
+            id_from_fingerprint(fp) for fp in sorted(missing_fps))))
+
+    return Unchanged(msg='Apt keys {} already installed'.format(', '.join(
+        id_from_fingerprint(fp) for fp in sorted(local_fps))))
 
 
 @operation()

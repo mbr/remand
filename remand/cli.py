@@ -48,6 +48,10 @@ APP_NAME = 'remand'
               help='Additional configuration files to read')
 @click.pass_context
 def cli(context, pkg_path, configfiles, debug):
+    pkg_path = list(pkg_path)
+    if 'REMAND_PKG_PATH' in os.environ:
+        pkg_path.extend(os.environ['REMAND_PKG_PATH'].split(os.pathsep))
+
     # pluginbase is imported here because just importing it breaks Crypto
     # (and with it paramiko)
     import pluginbase

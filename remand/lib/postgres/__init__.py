@@ -2,14 +2,13 @@
 # FIXME: should not be part of stdlib
 # FIXME: requires additional dependencies (sqlalchemy, _pgcatalog, psycopg2)
 
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 from hashlib import md5
 import os
 import warnings
 
 from contextlib2 import ExitStack
 from sqlalchemy import create_engine, exc as sa_exc
-from sqlalchemy.pool import NullPool
 from sqlalchemy.engine.url import URL
 from sqlalchemy.sql import text
 from sqlalchemy.orm import sessionmaker
@@ -19,10 +18,6 @@ import volatile
 from remand import operation, Changed, Unchanged
 from .. import proc
 from ... import net
-
-
-class AbortTransaction(Exception):
-    pass
 
 
 class PostgreSQL(object):
@@ -40,11 +35,8 @@ class PostgreSQL(object):
         self.ident = ident
         self.echo = echo
 
-    def abort_transaction(self):
-        raise AbortTransaction()
-
     @contextmanager
-    def db_engine(self):
+    def manager(self):
         with ExitStack() as stack:
             dtmp = stack.enter_context(volatile.dir())
             sock_addr = os.path.join(dtmp, '.s.PGSQL.5432')
@@ -60,67 +52,7 @@ class PostgreSQL(object):
                       query={'host': dtmp})
 
             engine = create_engine(url, echo=self.echo)
-            yield engine
-
-    @contextmanager
-    def transaction(self):
-        with self.db_engine() as engine:
-            con = engine.connect()
-            trans = con.begin()
-
-            try:
-                yield con
-            except AbortTransaction:
-                pass
-            else:
-                trans.commit()
-            finally:
-                trans.close()
-                con.close()
-
-    @contextmanager
-    def session(self):
-        with self.db_engine() as engine:
-            session = sessionmaker(bind=engine)()
-            try:
-                yield session
-                session.commit()
-            except:
-                session.rollback()
-                raise
-            finally:
-                session.close()
-
-    @contextmanager
-    def manager(self):
-        # convenience method
-        with self.session() as s:
-            yield Manager(s)
-
-    @operation()
-    def create_database(self, name, owner):
-        assert name.isalnum()
-        assert owner.isalnum()
-
-        import pdb
-        pdb.set_trace()  # DEBUG-REMOVEME
-        with self.db_engine() as engine:
-            dbs = [row[0]
-                   for row in engine.execute('SELECT datname FROM pg_database')
-                   ]
-
-            if name in dbs:
-                return Unchanged('Database {} already exists'.format(name))
-
-            sql = text(' '.join([
-                'CREATE DATABASE ' + pg_valid(name), 'WITH OWNER ' + pg_valid(
-                    owner)
-            ]))
-
-            # runs outside transaction
-            engine.execute(sql)
-
-        return Changed(msg='Created database {}'.format(name))
+            yield Manager(engine)
 
 
 def pg_valid(s):
@@ -130,23 +62,46 @@ def pg_valid(s):
 
 
 class Manager(object):
-    def __init__(self, session):
-        self.session = session
+    def __init__(self, engine):
+        self.engine = engine
+        self.sessionmaker = sessionmaker(bind=engine)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=sa_exc.SAWarning)
-            sc.prepare(self.session.bind)
+            sc.prepare(self.engine)
 
-    def update_role(self, name):
-        r = self.session.query(sc.Role).filter_by(rolname=name).first()
+    @contextmanager
+    def session(self, *args, **kwargs):
+        with closing(self.sessionmaker(*args, **kwargs)) as session:
+            yield session
+            if session.is_active:
+                session.commit()
 
-        if r:
-            print 'FOUND'
+    @operation()
+    def create_database(self, name, owner):
+        assert name.isalnum()
+        assert owner.isalnum()
 
-        return r
+        # check if database exists
+        qry = 'SELECT datname FROM pg_database'
+        dbs = [row[0] for row in self.engine.execute(qry)]
 
-    def list_roles(self):
-        return self.session.query(sc.Role).all()
+        if name in dbs:
+            return Unchanged('Database {} already exists'.format(name))
+
+        sql = text(' '.join([
+            'CREATE DATABASE ' + pg_valid(name), 'WITH OWNER ' + pg_valid(
+                owner)
+        ]))
+
+        # runs outside transaction
+        with self.session(autocommit=True) as sess:
+            con = sess.connection()
+
+            con.execute('COMMIT')
+            con.execute(sql)
+
+        return Changed(msg='Created database {}'.format(name))
 
     @operation()
     def create_role(self,
@@ -159,10 +114,10 @@ class Manager(object):
                     login=True,
                     connection_limit=-1):
         # FIXME: should update role if required
-
-        for role in self.list_roles():
-            if role.rolname == name:
-                return Unchanged(msg='Role {} already exists'.format(name))
+        with self.session() as sess:
+            for role in sess.query(sc.Role):
+                if role.rolname == name:
+                    return Unchanged(msg='Role {} already exists'.format(name))
 
         sql = text(' '.join([
             'CREATE ROLE ' + pg_valid(name),
@@ -184,6 +139,3 @@ class Manager(object):
                                           pw_md5=pw_md5)
 
         return Changed(msg='Created role {}'.format(name))
-
-    def commit(self):
-        self.session.commit()

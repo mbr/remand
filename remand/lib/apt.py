@@ -208,8 +208,8 @@ def install_packages(pkgs,
         'install',
         '--quiet',
         '--yes',  # FIXME: options below don't work. why?
-        #'--option', 'Dpkg::Options::="--force-confdef"',
-        #'--option', 'Dpkg::Options::="--force-confold"'
+        # '--option', 'Dpkg::Options::="--force-confdef"',
+        # '--option', 'Dpkg::Options::="--force-confold"'
     ])
     if force:
         args.append('--force-yes')
@@ -237,8 +237,8 @@ def remove_packages(pkgs, check_first=True, purge=False, max_age=3600):
         'remove' if not purge else 'purge',
         '--quiet',
         '--yes',  # FIXME: options below don't work. why?
-        #'--option', 'Dpkg::Options::="--force-confdef"',
-        #'--option', 'Dpkg::Options::="--force-confold"'
+        # '--option', 'Dpkg::Options::="--force-confdef"',
+        # '--option', 'Dpkg::Options::="--force-confold"'
     ])
     args.extend(pkgs)
     proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
@@ -387,8 +387,8 @@ def upgrade(max_age=3600, force=False, dist_upgrade=False):
         '--quiet',
         '--yes',
         # FIXME: options below don't work. why?
-        #'--option', 'Dpkg::Options::="--force-confdef"',
-        #'--option', 'Dpkg::Options::="--force-confold"'
+        # '--option', 'Dpkg::Options::="--force-confdef"',
+        # '--option', 'Dpkg::Options::="--force-confold"'
     ])
     if force:
         args.append('--force-yes')

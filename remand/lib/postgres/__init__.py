@@ -3,7 +3,6 @@
 # FIXME: requires additional dependencies (sqlalchemy, _pgcatalog, psycopg2)
 
 from contextlib import contextmanager, closing
-from hashlib import md5
 import os
 import warnings
 
@@ -119,23 +118,22 @@ class Manager(object):
                 if role.rolname == name:
                     return Unchanged(msg='Role {} already exists'.format(name))
 
-        sql = text(' '.join([
-            'CREATE ROLE ' + pg_valid(name),
-            'SUPERUSER' if superuser else 'NOSUPERUSER',
-            'CREATEDB' if createdb else 'NOCREATEDB',
-            'CREATEROLE' if createrole else 'NOCREATEROLE',
-            'INHERIT' if inherit else 'NOINHERIT',
-            'LOGIN' if login else 'NOLOGIN',
-            'CONNECTION LIMIT :connection_limit',
-            'ENCRYPTED PASSWORD :pw_md5'
-            if password is not None else 'NOPASSWORD',
-        ]))
+            sql = text(' '.join([
+                'CREATE ROLE ' + pg_valid(name),
+                'SUPERUSER' if superuser else 'NOSUPERUSER',
+                'CREATEDB' if createdb else 'NOCREATEDB',
+                'CREATEROLE' if createrole else 'NOCREATEROLE',
+                'INHERIT' if inherit else 'NOINHERIT',
+                'LOGIN' if login else 'NOLOGIN',
+                'CONNECTION LIMIT :connection_limit',
+                'PASSWORD :pw' if password is not None else 'NOPASSWORD',
+            ]))
 
-        pw_md5 = md5(password).hexdigest()
+            print('SQL', str(sql))
 
-        self.session.connection().execute(sql,
-                                          name=name,
-                                          connection_limit=connection_limit,
-                                          pw_md5=pw_md5)
+            sess.connection().execute(sql,
+                                      name=name,
+                                      connection_limit=connection_limit,
+                                      pw=password)
 
         return Changed(msg='Created role {}'.format(name))

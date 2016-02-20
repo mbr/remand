@@ -141,12 +141,17 @@ def run(obj, plan, uris):
         log.notice('Nothing to do; no URIs given')
 
 
-FILE_TPL = """{project}.webfiles.add_url(
+FILE_PY_TPL = """{project}.webfiles.add_url(
     {fn!r},
     {url!r},
     '{hashfunc}',
     '{hexdigest}'
 )"""
+
+FILE_INI_TPL = """[{fn}]
+url={url}
+{hashfunc}={hexdigest}
+"""
 
 # FIXME: a better way would be to cache the file immediately, instead of
 #        offering -o and -O
@@ -158,7 +163,11 @@ FILE_TPL = """{project}.webfiles.add_url(
 @click.option('--output', '-o', type=click.Path(), default=None)
 @click.option('--hashfunc', default='sha256')
 @click.option('--project', '-p', default='project')
-def download_file(url, output, hashfunc, project, save):
+@click.option('--fmt',
+              '-f',
+              type=click.Choice(['none', 'py', 'ini']),
+              default='ini')
+def download_file(url, output, hashfunc, project, save, fmt):
     u = urlparse(url)
 
     if output:
@@ -191,8 +200,16 @@ def download_file(url, output, hashfunc, project, save):
     # FIXME: wrap requests here or write generic download widget that can
     #        display a progressbar for all kinds of downloads
 
-    click.echo(FILE_TPL.format(fn=fn,
-                               url=url,
-                               hashfunc=hashfunc,
-                               hexdigest=h.hexdigest(),
-                               project=project))
+    if fmt == 'py':
+        tpl = FILE_PY_TPL
+    elif fmt == 'ini':
+        tpl = FILE_INI_TPL
+    else:
+        tpl = None
+
+    if tpl:
+        click.echo(tpl.format(fn=fn,
+                              url=url,
+                              hashfunc=hashfunc,
+                              hexdigest=h.hexdigest(),
+                              project=project))

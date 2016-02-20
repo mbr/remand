@@ -33,8 +33,9 @@ def run(cmd,
         log.debug('stdout: {}'.format(stdout))
         log.debug('stderr: {}'.format(stderr))
 
-        msg = 'Remote command "{}" exited ({})'.format(
-            ' '.join(shlex_quote(a) for a in args), proc.returncode)
+        msg = 'Remote command "{}" exited ({})'.format(' '.join(shlex_quote(a)
+                                                                for a in args),
+                                                       proc.returncode)
         meaning = status_meaning.get(proc.returncode)
 
         if meaning:
@@ -99,7 +100,7 @@ def sudo(user=None, password=None, timestamp_timeout=2 * 60):
 
                 if proc.returncode != 0:
                     raise RemoteFailureError(
-                        'Could not refresh sudo timestmap (exit status: {}).'
+                        'Could not refresh sudo timestamp (exit status: {}).'
                         'The most common occurence for this is an incorrect '
                         'password.'.format(proc.returncode))
 
@@ -119,8 +120,8 @@ def sudo(user=None, password=None, timestamp_timeout=2 * 60):
     orig_popen = remote.popen
     remote.popen = sudo_popen
 
-    sftp_cmd = ' '.join([shlex_quote(part) for part in sudo_args] +
-                        [config['sftp_location']])
+    sftp_cmd = ' '.join([shlex_quote(part) for part in sudo_args] + [config[
+        'sftp_location']])
 
     # override sftp subsystem
     config['sftp_command'] = sftp_cmd

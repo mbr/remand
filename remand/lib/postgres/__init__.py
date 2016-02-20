@@ -129,8 +129,6 @@ class Manager(object):
                 'PASSWORD :pw' if password is not None else 'NOPASSWORD',
             ]))
 
-            print('SQL', str(sql))
-
             sess.connection().execute(sql,
                                       name=name,
                                       connection_limit=connection_limit,

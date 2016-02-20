@@ -1,3 +1,5 @@
+import os
+
 from remand import config, info, log, remote
 from remand.lib import fs
 from remand.operation import operation, Changed, Unchanged
@@ -56,3 +58,8 @@ def set_authorized_keys(files, user='root', fix_permissions=True):
 
     return Unchanged(
         msg='SSH authorized keys for {} unchanged ({})'.format(user, fps))
+
+
+@operation()
+def grant_me_root(my_key='~/.ssh/id_rsa.pub'):
+    return set_authorized_keys([os.path.expanduser(my_key)], user='root')

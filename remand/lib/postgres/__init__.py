@@ -9,6 +9,7 @@ import warnings
 
 from contextlib2 import ExitStack
 from sqlalchemy import create_engine, exc as sa_exc
+from sqlalchemy.pool import NullPool
 from sqlalchemy.engine.url import URL
 from sqlalchemy.sql import text
 from sqlalchemy.orm import sessionmaker
@@ -70,12 +71,12 @@ class PostgreSQL(object):
             try:
                 yield con
             except AbortTransaction:
-                trans.close()
-            except Exception:
-                trans.close()
-                raise
+                pass
             else:
                 trans.commit()
+            finally:
+                trans.close()
+                con.close()
 
     @contextmanager
     def session(self):
@@ -95,6 +96,37 @@ class PostgreSQL(object):
         # convenience method
         with self.session() as s:
             yield Manager(s)
+
+    @operation()
+    def create_database(self, name, owner):
+        assert name.isalnum()
+        assert owner.isalnum()
+
+        import pdb
+        pdb.set_trace()  # DEBUG-REMOVEME
+        with self.db_engine() as engine:
+            dbs = [row[0]
+                   for row in engine.execute('SELECT datname FROM pg_database')
+                   ]
+
+            if name in dbs:
+                return Unchanged('Database {} already exists'.format(name))
+
+            sql = text(' '.join([
+                'CREATE DATABASE ' + pg_valid(name), 'WITH OWNER ' + pg_valid(
+                    owner)
+            ]))
+
+            # runs outside transaction
+            engine.execute(sql)
+
+        return Changed(msg='Created database {}'.format(name))
+
+
+def pg_valid(s):
+    if not s.isalnum():
+        raise ValueError('Invalid name (postgres): {!r}'.format(s))
+    return s
 
 
 class Manager(object):
@@ -128,14 +160,12 @@ class Manager(object):
                     connection_limit=-1):
         # FIXME: should update role if required
 
-        assert name.isalnum()  # used raw in sql query
-
         for role in self.list_roles():
             if role.rolname == name:
                 return Unchanged(msg='Role {} already exists'.format(name))
 
         sql = text(' '.join([
-            'CREATE ROLE ' + name,
+            'CREATE ROLE ' + pg_valid(name),
             'SUPERUSER' if superuser else 'NOSUPERUSER',
             'CREATEDB' if createdb else 'NOCREATEDB',
             'CREATEROLE' if createrole else 'NOCREATEROLE',

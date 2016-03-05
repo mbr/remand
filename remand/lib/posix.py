@@ -2,7 +2,7 @@ from collections import namedtuple, OrderedDict
 
 from remand import config, remote
 from remand.exc import RemoteFailureError
-from remand.lib import proc, memoize
+from remand.lib import proc, memoize, fs
 from remand.operation import operation, Unchanged, Changed
 
 _USERADD_STATUS_CODES = {
@@ -74,6 +74,34 @@ def info_system():
         flag_values[flag_name] = out.rstrip()
 
     return flag_values
+
+
+@memoize()
+def info_hostname():
+    res, _, _ = proc.run(['hostname', '--fqdn'])
+    return res.strip()
+
+
+@operation()
+def set_hostname(hostname):
+    # FIXME: update hosts file
+    prev_hostname = info_hostname()
+
+    changed = False
+
+    changed |= fs.upload_string('{}\n'.format(hostname),
+                                '/etc/hostname').changed
+
+    if prev_hostname != hostname:
+        proc.run(['hostname', hostname])
+        changed = True
+
+    if changed:
+        info_hostname.invalidate_cache()
+        return Changed(msg='Hostname changed from {} to {}'.format(
+            prev_hostname, hostname))
+
+    return Unchanged(msg='Hostname already set to {}'.format(hostname))
 
 
 @operation()

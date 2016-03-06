@@ -11,8 +11,10 @@ import click
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 from . import config, log, info
+from .exc import RebootNeeded
 from .configfiles import app_dirs
 from .util import ConfigParser
+from remand.lib import posix
 
 INVALID_CHARS = re.compile('[^A-Za-z0-9_]')
 
@@ -217,7 +219,20 @@ class Plan(object):
 
         # got our objective, now run it
 
-        return objective()
+        try:
+            return objective()
+        except RebootNeeded as e:
+            log.warning('A reboot has been request on behalf of {}'.format(e))
+
+            import pdb
+            pdb.set_trace()  # DEBUG-REMOVEME
+            if config.get_bool('auto_reboot'):
+                log.warning('Rebooting, you will have to reconnect.')
+                posix.reboot()
+            else:
+                log.warning('Automatic reboots disabled, exiting.')
+
+            # FIXME: perform automatic reconnection as well
 
     def objective(self, name=None):
         if not isinstance(name, str) and name is not None:

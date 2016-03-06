@@ -230,7 +230,7 @@ class Plan(object):
                 log.warning('Rebooting, you will have to reconnect.')
                 posix.reboot()
             else:
-                log.warning('Automatic reboots disabled, exiting.')
+                log.error('Automatic reboots disabled, cannot continue.')
 
             # FIXME: perform automatic reconnection as well
 

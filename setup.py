@@ -38,7 +38,8 @@ setup(name='remand',
                         'chardet',
                         'future',
                         'requests',
-                        'jinja2', ],
+                        'jinja2',
+                        'inflection', ],
       # FIXME: should guarantee that some packages like
       # volatile are installed
       entry_points="""

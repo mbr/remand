@@ -2,6 +2,7 @@ from functools import partial
 import sys
 
 import hashlib
+import inflection
 
 from stuf.collects import ChainMap
 
@@ -56,3 +57,9 @@ def hash_file(file_obj, hashfunc=hashlib.sha1, bufsize=None):
         m.update(chunk)
 
     return m
+
+
+def plural_n(word, times=2):
+    if times == 1:
+        return word
+    return inflection.pluralize(word)

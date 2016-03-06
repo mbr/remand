@@ -5,9 +5,38 @@ import shlex
 from six.moves import shlex_quote
 from time import time
 
-from remand import remote, log, config
+from remand import remote, log, config, util
 from remand.exc import RemoteFailureError
 from remand.remotes.ssh import SSHRemote
+
+
+class RemoteProcessFailedError(RemoteFailureError):
+    def __init__(self, args, returncode, meaning, stdout, stderr):
+        super(RemoteProcessFailedError, self).__init__()
+        self.args = args
+        self.returncode = returncode
+        self.meaning = meaning
+        self.stdout = stdout
+        self.stderr = stderr
+
+    @property
+    def msg(self):
+        return str(self)
+
+    def __str__(self):
+        msg = 'Remote command "{}" exited ({})'.format(
+            ' '.join(shlex_quote(a) for a in self.args), self.returncode)
+
+        if self.meaning:
+            msg += ': ' + self.meaning
+
+        if self.stdout:
+            msg += '\n' + util.indent('    ', self.stdout)
+
+        if self.stderr:
+            msg += '\n' + util.indent('    ', self.stderr)
+
+        return msg
 
 
 def _cmd_to_args(cmd):
@@ -33,20 +62,11 @@ def run(cmd,
         log.debug('stdout: {}'.format(stdout))
         log.debug('stderr: {}'.format(stderr))
 
-        msg = 'Remote command "{}" exited ({})'.format(' '.join(shlex_quote(a)
-                                                                for a in args),
-                                                       proc.returncode)
-        meaning = status_meaning.get(proc.returncode)
-
-        if meaning:
-            msg += ': ' + meaning
-
-        exc = RemoteFailureError(msg)
-        exc.returncode = proc.returncode
-        exc.cmd_args = args
-        exc.meaning = meaning
-
-        raise exc
+        raise RemoteProcessFailedError(args,
+                                       proc.returncode,
+                                       status_meaning.get(proc.returncode),
+                                       stdout,
+                                       stderr, )
 
     return stdout, stderr, proc.returncode
 

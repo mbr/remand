@@ -63,3 +63,7 @@ def plural_n(word, times=2):
     if times == 1:
         return word
     return inflection.pluralize(word)
+
+
+def indent(prefix, s):
+    return prefix + ('\n' + prefix).join(line for line in s.splitlines())

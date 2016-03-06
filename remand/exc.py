@@ -2,6 +2,10 @@ class RemandError(Exception):
     """Base class for all remand-specific exceptions."""
 
 
+class RebootNeeded(Exception):
+    """A reboot has been requested by an operation."""
+
+
 class TransportError(RemandError):
     """Indicates an error with the transport, which is non-recoverable."""
 

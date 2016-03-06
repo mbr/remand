@@ -2,6 +2,8 @@ from functools import wraps
 
 import logbook
 
+from .exc import RebootNeeded
+
 log = logbook.Logger('op')
 
 
@@ -34,6 +36,10 @@ def operation():
             if isinstance(result, Failed):
                 result._reraise()
 
+            # handle reboot
+            if result.reboot_needed:
+                raise RebootNeeded(f.__name__)
+
             return result
 
         return _
@@ -44,9 +50,10 @@ def operation():
 class OperationResult(object):
     changed = None
 
-    def __init__(self, value=None, msg=None):
+    def __init__(self, value=None, msg=None, reboot_needed=False):
         self._value = value
         self.msg = msg
+        self.reboot_needed = reboot_needed
 
     @property
     def value(self):

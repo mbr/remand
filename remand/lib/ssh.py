@@ -21,6 +21,14 @@ class KeyFile(object):
         return ''.join(k.to_pubkey_line() + '\n' for k in self.keys)
 
 
+def _get_authorized_keys_file(user):
+    u = info['posix.users'][user]
+    ak_file = config['ssh_authorized_keys_file'].format(name=u.name,
+                                                        home=u.home)
+    log.debug('Authorized key file for {}: {}'.format(u.name, ak_file))
+    return ak_file
+
+
 @operation()
 def set_authorized_keys(files, user='root', fix_permissions=True):
     DIR_PERMS = 0o700
@@ -58,6 +66,38 @@ def set_authorized_keys(files, user='root', fix_permissions=True):
 
     return Unchanged(
         msg='SSH authorized keys for {} unchanged ({})'.format(user, fps))
+
+
+@operation()
+def init_authorized_keys(user='root', fix_permissions=True):
+    DIR_PERMS = 0o700
+    FILE_PERMS = 0o600
+
+    ak_file = _get_authorized_keys_file(user)
+    ak_dir = remote.path.dirname(ak_file)
+
+    changed = False
+
+    # ensure the directory exists
+    changed |= fs.create_dir(ak_dir, mode=DIR_PERMS).changed
+
+    if fix_permissions:
+        changed |= fs.chmod(ak_dir, DIR_PERMS).changed
+
+    # check if the authorized keys file exists
+    if not remote.lstat(ak_file):
+        changed |= fs.touch(ak_file).changed
+
+    if fix_permissions:
+        changed |= fs.chmod(ak_file, FILE_PERMS).changed
+
+    # at this point, we have fixed permissions for file and dir, as well as
+    # ensured they exist. however, they might still be owned by root
+
+    if changed:
+        return Changed(msg='Changed permissions or owner on authorized keys')
+    return Unchanged(
+        msg='authorized keys file has correct owner and permissions')
 
 
 @operation()

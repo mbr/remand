@@ -224,15 +224,13 @@ class Plan(object):
         except RebootNeeded as e:
             log.warning('A reboot has been request on behalf of {}'.format(e))
 
-            import pdb
-            pdb.set_trace()  # DEBUG-REMOVEME
             if config.get_bool('auto_reboot'):
                 log.warning('Rebooting, you will have to reconnect.')
                 posix.reboot()
+
+                # FIXME: auto-reconnect
             else:
                 log.error('Automatic reboots disabled, cannot continue.')
-
-            # FIXME: perform automatic reconnection as well
 
     def objective(self, name=None):
         if not isinstance(name, str) and name is not None:

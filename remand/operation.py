@@ -2,7 +2,8 @@ from functools import wraps
 
 import logbook
 
-from .exc import RebootNeeded
+from . import config
+from .exc import RebootNeeded, Retry
 
 log = logbook.Logger('op')
 
@@ -40,6 +41,10 @@ def operation():
             if result.reboot_needed:
                 raise RebootNeeded(f.__name__)
 
+            # handle reconnect
+            if result.reconnect_needed:
+                raise Retry(f.__name__, int(config['reconnect_timeout']))
+
             return result
 
         return _
@@ -50,10 +55,15 @@ def operation():
 class OperationResult(object):
     changed = None
 
-    def __init__(self, value=None, msg=None, reboot_needed=False):
+    def __init__(self,
+                 value=None,
+                 msg=None,
+                 reboot_needed=False,
+                 reconnect_needed=False):
         self._value = value
         self.msg = msg
         self.reboot_needed = reboot_needed
+        self.reconnect_needed = reconnect_needed
 
     @property
     def value(self):

@@ -1,5 +1,6 @@
 import hashlib
 import os
+import time
 
 import click
 import logbook
@@ -9,7 +10,7 @@ from six.moves.urllib.parse import urlparse
 
 from . import _context
 from .configfiles import HostRegistry, load_configuration
-from .exc import RemandError, TransportError
+from .exc import RemandError, TransportError, Retry
 from .plan import Plan
 from .lib import InfoManager, proc
 from .remotes.ssh import SSHRemote
@@ -87,56 +88,67 @@ def run(obj, plan, uris):
 
     # load plan
     for uri in uris:
-        _context.push({})
-        try:
-            # lookup host
-            cfg = obj['hosts'].get_config_for_host(uri.host)
+        retry = True
+        while retry:
+            _context.push({})
+            try:
+                retry = False
+                # lookup host
+                cfg = obj['hosts'].get_config_for_host(uri.host)
 
-            # add layer for our values
-            cfg = cfg.new_child()
+                # add layer for our values
+                cfg = cfg.new_child()
 
-            # construct new uri
-            _tmp = cfg.new_child()
-            _tmp.update(uri.as_dict())
+                # construct new uri
+                _tmp = cfg.new_child()
+                _tmp.update(uri.as_dict())
 
-            cfg['uri'] = Uri.from_dict(_tmp)
+                cfg['uri'] = Uri.from_dict(_tmp)
 
-            # create thread-locals:
-            _context.top['config'] = cfg
-            _context.top['log'] = log
-            _context.top['state'] = {}
-            _context.top['info'] = InfoManager()
-            _context.top['current_plan'] = plan
+                # create thread-locals:
+                _context.top['config'] = cfg
+                _context.top['log'] = log
+                _context.top['state'] = {}
+                _context.top['info'] = InfoManager()
+                _context.top['current_plan'] = plan
 
-            transport_cls = all_transports.get(cfg['uri'].transport, None)
-            if not transport_cls:
-                raise TransportError('Unknown transport: {}'.format(cfg[
-                    'uri']))
+                transport_cls = all_transports.get(cfg['uri'].transport, None)
+                if not transport_cls:
+                    raise TransportError('Unknown transport: {}'.format(cfg[
+                        'uri']))
 
-            log.notice('Executing {} on {}'.format(plan, cfg['uri']))
+                log.notice('Executing {} on {}'.format(plan, cfg['uri']))
 
-            # instantiate remote
-            transport = transport_cls()
-            _context.top['remote'] = transport
+                # instantiate remote
+                transport = transport_cls()
+                _context.top['remote'] = transport
 
-            use_sudo = False
-            if cfg['use_sudo'] == 'auto':
-                if cfg['uri'].user != 'root':
-                    use_sudo = True
-            else:
-                use_sudo = cfg.get_bool('use_sudo')
+                use_sudo = False
+                if cfg['use_sudo'] == 'auto':
+                    if cfg['uri'].user != 'root':
+                        use_sudo = True
+                else:
+                    use_sudo = cfg.get_bool('use_sudo')
 
-            if use_sudo:
-                log.debug('using sudo to execute plan')
-                with proc.sudo():
+                if use_sudo:
+                    log.debug('using sudo to execute plan')
+                    with proc.sudo():
+                        plan.execute()
+                else:
                     plan.execute()
-            else:
-                plan.execute()
+            except Retry as e:
+                log.warning('A reconnect has been requested by {}'.format(e))
 
-        except RemandError as e:
-            log.error(str(e))
-        finally:
-            _context.pop()
+                if cfg.get_bool('auto_reconnect'):
+                    log.warning('Reconnecting in {} seconds'.format(e.timeout))
+                    time.sleep(e.timeout)
+                    retry = True
+                else:
+                    log.error('Automatic reconnects disabled, cannot continue')
+            except RemandError as e:
+                log.error(str(e))
+            finally:
+                _context.pop()
 
     if not uris:
         log.notice('Nothing to do; no URIs given')

@@ -35,7 +35,7 @@ AK_FILE_PERMS = 0o600
 
 @operation()
 def set_authorized_keys(files, user='root', fix_permissions=True):
-    ak_file = init_authorized_keys(user, fix_permissions)
+    ak_file = init_authorized_keys(user, fix_permissions).value
 
     kf = KeyFile()
 

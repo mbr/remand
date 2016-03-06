@@ -30,8 +30,8 @@ setup(name='remand',
                         'volatile>=1.1',
                         'sshkeys',
                         'paramiko',  # needs our bugfix!
-                        #'sqlalchemy',
-                        #'postgres_pgcatalog',
+                        # 'sqlalchemy',
+                        # 'postgres_pgcatalog',
                         'contextlib2',
                         # chardet is a hidden dependency of python-debian
                         'python-debian',

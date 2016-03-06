@@ -231,6 +231,7 @@ class SSHRemote(Remote):
         port = uri.port or 22
         attempt = 0
         max_attempts = int(config['ssh_connect_retries'])
+        delay = int(config['ssh_connect_retry_delay'])
 
         while True:
             if attempt > 0:
@@ -263,6 +264,7 @@ class SSHRemote(Remote):
             except NoValidConnectionsError as e:
                 attempt += 1
                 if attempt < max_attempts:
+                    time.delay(delay)
                     continue
 
                 raise TransportError('Could not connect to {}:{}'.format(

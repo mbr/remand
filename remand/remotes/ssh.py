@@ -9,7 +9,8 @@ from future.utils import raise_from
 from paramiko.client import (SSHClient, AutoAddPolicy, RejectPolicy,
                              MissingHostKeyPolicy)
 from paramiko.sftp_client import SFTPClient
-from paramiko.ssh_exception import SSHException, BadHostKeyException
+from paramiko.ssh_exception import (SSHException, BadHostKeyException,
+                                    NoValidConnectionsError)
 from six.moves import shlex_quote
 
 from .. import config, log, util
@@ -226,25 +227,51 @@ class SSHRemote(Remote):
         self._client.set_missing_host_key_policy(policy)
 
         uri = config['uri']
-        try:
-            self._client.connect(
-                uri.host,
-                uri.port or 22,
-                uri.user,
-                password=uri.password,
-                key_filename=config['ssh_private_key'] or None)
-        except BadHostKeyException, e:
-            raise TransportError(
-                _BAD_KEY_ERROR.format(e.key.get_name(),
-                                      format_key(e.key),
-                                      e.expected_key.get_name(),
-                                      format_key(e.expected_key),
-                                      ssh_host_name(uri), ))
-        except SSHException, e:
-            if 'not found in known_hosts' in e.message:
-                raise TransportError(_KNOWN_HOSTS_ERROR.format(ssh_host_name(
-                    uri)))
-            raise
+        timeout = int(config['ssh_connect_timeout'])
+        port = uri.port or 22
+        attempt = 0
+        max_attempts = int(config['ssh_connect_retries'])
+
+        while True:
+            if attempt > 0:
+                remaining = max_attempts - attempt
+                log.warning('Connection to {}:{} failed {} {} already. '
+                            'Trying {} more {}...'.format(
+                                uri.host, port, attempt, util.plural_n(
+                                    'time', attempt), remaining, util.plural_n(
+                                        'time',
+                                        remaining, )))
+            else:
+                log.debug('First connection attempt to {}:{}'.format(uri.host,
+                                                                     port))
+            try:
+                self._client.connect(
+                    uri.host,
+                    port,
+                    uri.user,
+                    password=uri.password,
+                    key_filename=config['ssh_private_key'] or None,
+                    timeout=timeout)
+                break
+            except BadHostKeyException, e:
+                raise TransportError(
+                    _BAD_KEY_ERROR.format(e.key.get_name(),
+                                          format_key(e.key),
+                                          e.expected_key.get_name(),
+                                          format_key(e.expected_key),
+                                          ssh_host_name(uri), ))
+            except NoValidConnectionsError as e:
+                attempt += 1
+                if attempt < max_attempts:
+                    continue
+
+                raise TransportError('Could not connect to {}:{}'.format(
+                    uri.host, port))
+            except SSHException, e:
+                if 'not found in known_hosts' in e.message:
+                    raise TransportError(_KNOWN_HOSTS_ERROR.format(
+                        ssh_host_name(uri)))
+                raise
 
         log.debug('SSH connection established')
 

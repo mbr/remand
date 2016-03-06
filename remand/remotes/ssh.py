@@ -2,6 +2,7 @@ from binascii import hexlify
 from functools import wraps, partial
 from threading import Thread
 import os
+import socket
 import time
 
 import click
@@ -234,15 +235,7 @@ class SSHRemote(Remote):
         delay = int(config['ssh_connect_retry_delay'])
 
         while True:
-            if attempt > 0:
-                remaining = max_attempts - attempt
-                log.warning('Connection to {}:{} failed {} {} already. '
-                            'Trying {} more {}...'.format(
-                                uri.host, port, attempt, util.plural_n(
-                                    'time', attempt), remaining, util.plural_n(
-                                        'time',
-                                        remaining, )))
-            else:
+            if attempt == 0:
                 log.debug('First connection attempt to {}:{}'.format(uri.host,
                                                                      port))
             try:
@@ -261,10 +254,16 @@ class SSHRemote(Remote):
                                           e.expected_key.get_name(),
                                           format_key(e.expected_key),
                                           ssh_host_name(uri), ))
-            except NoValidConnectionsError as e:
+            except (socket.timeout, NoValidConnectionsError) as e:
                 attempt += 1
+
+                msg = ('Connection to {}:{} failed {} out of {} times'
+                       .format(uri.host, port, attempt, max_attempts))
+                log.warning(msg)
+
                 if attempt < max_attempts:
-                    time.delay(delay)
+                    log.info('Retrying to connect in {} seconds'.format(delay))
+                    time.sleep(delay)
                     continue
 
                 raise TransportError('Could not connect to {}:{}'.format(

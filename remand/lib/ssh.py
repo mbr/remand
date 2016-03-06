@@ -21,7 +21,7 @@ class KeyFile(object):
         return ''.join(k.to_pubkey_line() + '\n' for k in self.keys)
 
 
-def _get_authorized_keys_file(user):
+def get_authorized_keys_file(user):
     u = info['posix.users'][user]
     ak_file = config['ssh_authorized_keys_file'].format(name=u.name,
                                                         home=u.home)

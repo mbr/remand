@@ -31,7 +31,9 @@ class TypeConversionMixin(object):
 
 
 class TypeConversionChainMap(TypeConversionMixin, ChainMap):
-    pass
+    # backport of Py3 feature
+    def new_child(self, m=None):
+        return self.__class__({} if m is None else m, *self.maps)
 
 
 def validate_umask(umask):

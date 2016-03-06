@@ -89,6 +89,7 @@ def run(obj, plan, uris):
     # load plan
     for uri in uris:
         retry = True
+        config_overlay = {}
         while retry:
             _context.push({})
             try:
@@ -96,7 +97,7 @@ def run(obj, plan, uris):
                 # lookup host
                 cfg = obj['hosts'].get_config_for_host(uri.host)
 
-                # add layer for our values
+                # add layer for uri values
                 cfg = cfg.new_child()
 
                 # construct new uri
@@ -104,6 +105,9 @@ def run(obj, plan, uris):
                 _tmp.update(uri.as_dict())
 
                 cfg['uri'] = Uri.from_dict(_tmp)
+
+                # add another configuration layer for custom values from plans
+                cfg = cfg.new_child(config_overlay)
 
                 # create thread-locals:
                 _context.top['config'] = cfg

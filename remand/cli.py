@@ -10,7 +10,7 @@ from six.moves.urllib.parse import urlparse
 
 from . import _context
 from .configfiles import HostRegistry, load_configuration
-from .exc import RemandError, TransportError, Retry
+from .exc import RemandError, TransportError, ReconnectNeeded
 from .plan import Plan
 from .lib import InfoManager, proc
 from .remotes.ssh import SSHRemote
@@ -136,12 +136,13 @@ def run(obj, plan, uris):
                         plan.execute()
                 else:
                     plan.execute()
-            except Retry as e:
+            except ReconnectNeeded as e:
                 log.warning('A reconnect has been requested by {}'.format(e))
 
                 if cfg.get_bool('auto_reconnect'):
-                    log.warning('Reconnecting in {} seconds'.format(e.timeout))
-                    time.sleep(e.timeout)
+                    delay = int(cfg['reconnect_delay'])
+                    log.warning('Reconnecting in {} seconds'.format(delay))
+                    time.sleep(delay)
                     retry = True
                 else:
                     log.error('Automatic reconnects disabled, cannot continue')

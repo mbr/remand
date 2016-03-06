@@ -6,12 +6,8 @@ class RebootNeeded(RemandError):
     """A reboot has been requested by an operation."""
 
 
-class Retry(RemandError):
+class ReconnectNeeded(RemandError):
     """A reconnect has been request."""
-
-    def __init__(self, src, timeout=None):
-        super(RemandError, self).__init__(src)
-        self.timeout = timeout
 
 
 class TransportError(RemandError):

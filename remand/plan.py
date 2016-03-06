@@ -6,12 +6,13 @@ import os
 import re
 import requests
 import uuid
+import time
 
 import click
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 from . import config, log, info
-from .exc import RebootNeeded
+from .exc import RebootNeeded, ReconnectNeeded
 from .configfiles import app_dirs
 from .util import ConfigParser
 from remand.lib import posix
@@ -225,10 +226,12 @@ class Plan(object):
             log.warning('A reboot has been request on behalf of {}'.format(e))
 
             if config.get_bool('auto_reboot'):
-                log.warning('Rebooting, you will have to reconnect.')
+                delay = int(config['reboot_delay'])
+                log.warning(
+                    'Rebooting, will reconnect after {} seconds'.format(delay))
                 posix.reboot()
-
-                # FIXME: auto-reconnect
+                time.sleep(delay)
+                raise ReconnectNeeded(objective)
             else:
                 log.error('Automatic reboots disabled, cannot continue.')
 

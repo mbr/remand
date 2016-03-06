@@ -2,8 +2,7 @@ from functools import wraps
 
 import logbook
 
-from . import config
-from .exc import RebootNeeded, Retry
+from .exc import RebootNeeded, ReconnectNeeded
 
 log = logbook.Logger('op')
 
@@ -43,7 +42,7 @@ def operation():
 
             # handle reconnect
             if result.reconnect_needed:
-                raise Retry(f.__name__, int(config['reconnect_timeout']))
+                raise ReconnectNeeded(f.__name__)
 
             return result
 

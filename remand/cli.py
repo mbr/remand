@@ -132,7 +132,8 @@ def run(obj, plan, uris):
                     plan.execute()
             else:
                 plan.execute()
-        except RemandError, e:
+
+        except RemandError as e:
             log.error(str(e))
         finally:
             _context.pop()

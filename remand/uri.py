@@ -1,3 +1,4 @@
+from copy import copy
 import re
 
 URI_RE = re.compile(r'(?:(?P<transport>[a-zA-Z][a-zA-Z0-9]*)://)?' +
@@ -83,3 +84,6 @@ class Uri(object):
                 d[k] = v
 
         return d
+
+    def copy(self):
+        return copy(self)

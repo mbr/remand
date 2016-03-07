@@ -148,6 +148,7 @@ def run(obj, plan, uris):
                     log.warning('Reconnecting in {} seconds'.format(delay))
                     time.sleep(delay)
                     retry = True
+                    continue
                 else:
                     log.error('Automatic reconnects disabled, cannot continue')
             except RemandError as e:

@@ -141,11 +141,11 @@ def run(obj, plan, uris):
                 else:
                     plan.execute()
             except ReconnectNeeded as e:
-                log.warning('A reconnect has been requested by {}'.format(e))
+                log.notice('A reconnect has been requested by {}'.format(e))
 
                 if cfg.get_bool('auto_reconnect'):
                     delay = int(cfg['reconnect_delay'])
-                    log.warning('Reconnecting in {} seconds'.format(delay))
+                    log.notice('Reconnecting in {} seconds'.format(delay))
                     time.sleep(delay)
                     retry = True
                     continue

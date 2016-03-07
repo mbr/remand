@@ -1,7 +1,7 @@
 import os
 
-from remand import config, info, log, remote
-from remand.lib import fs
+from remand import config, info, log, remote, util
+from remand.lib import fs, proc, systemd
 from remand.operation import operation, Changed, Unchanged
 
 from sshkeys import Key
@@ -87,6 +87,43 @@ def init_authorized_keys(user='root', fix_permissions=True):
     return Unchanged(
         ak_file,
         msg='authorized keys file has correct owner and permissions')
+
+
+@operation()
+def regenerate_host_keys():
+    key_names = [
+        '/etc/ssh/ssh_host_ecdsa_key',
+        '/etc/ssh/ssh_host_ed25519_key',
+        '/etc/ssh/ssh_host_rsa_key',
+        '/etc/ssh/ssh_host_dsa_key',
+    ]
+
+    def collect_fingerprints():
+        fps = ''
+        for key in key_names:
+            if remote.lstat(key):
+                fps += proc.run(['ssh-keygen', '-l', '-f', key])[0]
+        return fps
+
+    old_fps = collect_fingerprints()
+
+    # remove old keys
+    for key in key_names:
+        fs.remove_file(key)
+        fs.remove_file(key + '.pub')
+
+    # generate new ones
+    proc.run(['dpkg-reconfigure', 'openssh-server'])
+
+    # restart openssh
+    systemd.restart_unit('sshd.service')
+
+    new_fps = collect_fingerprints()
+
+    return Changed(
+        msg='Regenerated SSH host keys.\n'
+        'Old fingerprints:\n{}\nNew fingerprints:\n{}\n'.format(
+            util.indent('    ', old_fps), util.indent('    ', new_fps)))
 
 
 @operation()

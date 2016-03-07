@@ -90,7 +90,11 @@ def init_authorized_keys(user='root', fix_permissions=True):
 
 
 @operation()
-def regenerate_host_keys():
+def regenerate_host_keys(mark='/etc/ssh/host_keys_regenerated'):
+    if mark:
+        if remote.lstat(mark):
+            return Unchanged(msg='Hostkeys have already been regenerated')
+
     key_names = [
         '/etc/ssh/ssh_host_ecdsa_key',
         '/etc/ssh/ssh_host_ed25519_key',
@@ -119,6 +123,9 @@ def regenerate_host_keys():
     systemd.restart_unit('sshd.service')
 
     new_fps = collect_fingerprints()
+
+    # mark host keys as new
+    fs.touch(mark)
 
     return Changed(
         msg='Regenerated SSH host keys.\n'

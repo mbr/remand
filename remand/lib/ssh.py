@@ -120,7 +120,7 @@ def regenerate_host_keys(mark='/etc/ssh/host_keys_regenerated'):
     proc.run(['dpkg-reconfigure', 'openssh-server'])
 
     # restart openssh
-    systemd.restart_unit('sshd.service')
+    systemd.restart_unit('ssh.service')
 
     new_fps = collect_fingerprints()
 

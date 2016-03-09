@@ -375,6 +375,27 @@ def install_source_list(path, name=None, main=False):
 
 
 @operation()
+def add_repo(distribution,
+             components=['main'],
+             site='http://http.debian.net/debian',
+             src=False):
+    comps = ' '.join(components)
+    line = '{} {} {} {}\n'.format('deb-src' if src else 'deb', site,
+                                  distribution, comps)
+    path = remote.path.join(config['apt_sources_list_d'],
+                            '{}_{}{}.list'.format(distribution,
+                                                  '_'.join(components), '' if
+                                                  not src else '-sources'))
+
+    upload = fs.upload_string(line, path, create_parent=True)
+
+    if upload.changed:
+        info_update_timestamp().mark_stale()
+        return Changed(msg='Added apt repository: {}'.format(line))
+    return Unchanged(msg='Already present: {}'.format(line))
+
+
+@operation()
 def upgrade(max_age=3600, force=False, dist_upgrade=False):
     # FIXME: should allow upgrading selected packages
     update(max_age)

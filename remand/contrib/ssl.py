@@ -36,12 +36,12 @@ def install_cert(cert, key, cert_name=None, key_name=None):
         raise ConfigurationError('Remote key dir {} does not exist'.format(
             key_dir))
 
-    SECURE_MODE = 0o710
+    SECURE_MODES = (0o700, 0o710)
     actual_mode = key_dir_st.st_mode & 0o777
-    if actual_mode != SECURE_MODE:
+    if actual_mode not in SECURE_MODES:
         raise ConfigurationError(
-            'Mode of remote key dir {} is {:o}, should be {:o}'.format(
-                key_dir, actual_mode, SECURE_MODE))
+            'Mode of remote key dir {} is {:o}, should be one of {:o}'.format(
+                key_dir, actual_mode, SECURE_MODES))
 
     if key_dir_st.st_uid != 0:
         raise ConfigurationError(

@@ -378,10 +378,19 @@ def install_source_list(path, name=None, main=False):
 def add_repo(distribution,
              components=['main'],
              site='http://http.debian.net/debian',
-             src=False):
+             src=False,
+             arch=[]):
     comps = ' '.join(components)
-    line = '{} {} {} {}\n'.format('deb-src' if src else 'deb', site,
-                                  distribution, comps)
+
+    options = ''
+    if arch:
+        options = ' [ arch={} ]'.format(','.join(arch))
+
+    line = '{}{} {} {} {}\n'.format('deb-src' if src else 'deb',
+                                    options,
+                                    site,
+                                    distribution,
+                                    comps, )
     path = remote.path.join(config['apt_sources_list_d'],
                             '{}_{}{}.list'.format(distribution,
                                                   '_'.join(components), '' if

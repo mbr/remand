@@ -67,6 +67,7 @@ def cli(context, pkg_path, configfiles, debug):
         level=logbook.DEBUG if debug else logbook.INFO)
 
     # setup logging
+    logbook.compat.redirect_logging()
     handler.push_application()
 
     # read configuration and host registry

@@ -34,6 +34,13 @@ _BAD_KEY_ERROR = (
     "known_hosts key: {} {}\n\n"
     "The host key for '{}' has changed and checking is enabled.")
 
+_PRIVATE_KEY_ENCRYPTED = (
+    "A suitable private key for authentication was found, but it is password "
+    "protected. Please use ssh-agent to authenticate with password protected "
+    "keys. If you are seeing this message despite having ssh-agent running, "
+    "either the key is missing or something went wrong with authenticating "
+    "with it")
+
 
 class WarnAutoAddPolicy(AutoAddPolicy):
     def missing_host_key(self, client, hostname, key):
@@ -245,7 +252,9 @@ class SSHRemote(Remote):
                     uri.user,
                     password=uri.password,
                     key_filename=config['ssh_private_key'] or None,
-                    timeout=timeout)
+                    timeout=timeout,
+                    look_for_keys=True,
+                    allow_agent=True)
                 break
             except BadHostKeyException, e:
                 raise TransportError(
@@ -272,6 +281,8 @@ class SSHRemote(Remote):
                 if 'not found in known_hosts' in e.message:
                     raise TransportError(_KNOWN_HOSTS_ERROR.format(
                         ssh_host_name(uri)))
+                if 'Private key file is encrypted' in e.message:
+                    raise TransportError(_PRIVATE_KEY_ENCRYPTED)
                 raise
 
         log.debug('SSH connection established')

@@ -1,0 +1,71 @@
+Port {{port}}
+UseDNS {{'yes' if use_dns else 'no'}}
+
+
+SyslogFacility AUTH
+LogLevel INFO
+MaxAuthTries 1
+
+# we're restricting to ipv4, until we actually use v6
+AddressFamily {{address_family}}
+
+# root login is only allowed without a password
+PermitRootLogin {{'without-password' if permit_root else 'no'}}
+
+{% if allow_users -%}
+AllowUsers {{allow_users|join(' ')}}
+{% endif -%}
+{% if allow_grous %}
+AllowGroups {{allow_groups|join(' ')}}
+{% endif -%}
+
+# restrict to key based auth
+PermitEmptyPasswords no
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+KerberosAuthentication no
+GSSAPIAuthentication no
+RSAAuthentication no
+RhostsRSAAuthentication no
+HostbasedAuthentication no
+UsePAM no
+PubkeyAuthentication yes
+
+# authorized keys file location
+AuthorizedKeysFile  .ssh/authorized_keys
+StrictModes yes
+UsePrivilegeSeparation yes
+
+# usually, this at best leaks information
+PrintMotd no
+
+# Accept locale-related environment variables
+AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES
+AcceptEnv LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT
+AcceptEnv LC_IDENTIFICATION LC_ALL LANGUAGE
+{% if x11 %}AcceptEnv XMODIFIERS{% endif %}
+
+# prefer using deployment keys instead of agent forwarding
+AllowAgentForwarding {{'yes' if agent_forwarding else 'no'}}
+X11Forwarding {{'yes' if x11 else 'no'}}
+AllowTcpForwarding {{'yes' if tcp_forwarding else 'no'}}
+AllowStreamLocalForwarding {{'yes' if unix_forwarding else 'no'}}
+PermitTunnel {{'yes' if tunnel else 'no'}}
+
+{% if sftp_enabled -%}
+Subsystem  sftp  {{config['sftp_location']}}
+{% endif -%}
+
+Protocol 2
+
+{% if modern_ciphers -%}
+# restrictions on cryptographic methods used
+# see https://stribika.github.io/2015/01/04/secure-secure-shell.html
+
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+
+KexAlgorithms curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-ripemd160-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,hmac-ripemd160,umac-128@openssh.com
+{% endif -%}

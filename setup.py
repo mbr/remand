@@ -11,7 +11,7 @@ def read(fname):
 
 
 setup(name='remand',
-      version='0.3dev',
+      version='0.4.0.dev1',
       description='Sane server provisioning.',
       long_description=read('README.rst'),
       author='Marc Brinkmann',

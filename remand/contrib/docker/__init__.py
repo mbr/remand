@@ -2,7 +2,7 @@ import os
 
 from remand.lib import apt, fs
 
-from remand import Plan, operation, Changed, Unchanged, current_plan
+from remand import Plan, operation, Changed, Unchanged
 
 # FIXME: this needs a more elegant solution
 docker = Plan(__name__, os.path.dirname(__file__))

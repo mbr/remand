@@ -1,0 +1,9 @@
+[Unit]
+Description=Run autoupdate {{boot_time}} after boot and every {{unit_active_time}} after
+
+[Timer]
+OnBootSec={{boot_time}}
+OnUnitActiveSec={{unit_active_time}}
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,6 @@
+[Unit]
+Description=Automatically update system
+
+[Service]
+ExecStart=/bin/sh -c "/usr/bin/apt-get -qq update && /usr/bin/apt-get -qq -y upgrade && echo auto-update completed successfully"
+Type=oneshot

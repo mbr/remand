@@ -4,7 +4,11 @@ UseDNS {{'yes' if use_dns else 'no'}}
 
 SyslogFacility AUTH
 LogLevel INFO
-MaxAuthTries 1
+
+# setting MaxAuthTries to a very small values will cause issues if multiple
+# keys are available in a connecting users ssh-agent and the connecting client
+# (like paramiko) will simply try each key, using up a try
+MaxAuthTries 6
 
 # we're restricting to ipv4, until we actually use v6
 AddressFamily {{address_family}}

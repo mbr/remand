@@ -9,7 +9,20 @@ from remand.exc import RemoteFailureError
 from remand.lib import proc, memoize, fs
 from remand.operation import operation, Unchanged, Changed
 
-PackageRecord = namedtuple('PackageRecord', 'name,version')
+
+class PackageRecord(namedtuple('PackageRecord', 'name,version')):
+    def eq_version(self, other_version):
+        sver = self.version
+        over = self.version
+
+        # handle epochs (1:1.2.3)
+        if sver[1] != ':':
+            sver = '1:' + sver
+
+        if over[1] != ':':
+            over = '1:' + over
+
+        return sver == over
 
 
 class CachedRemoteTimestamp(object):
@@ -273,17 +286,20 @@ def dpkg_install(paths, check=True):
     if not hasattr(paths, 'keys'):
         pkgs = {}
 
-        # determine package names from filenames
+        # determine package names from filenames. ideally, we would open the
+        # package here and check
         for p in paths:
             fn = os.path.basename(p)
             try:
-                pkgs[fn[:fn.index('_')]] = p
+                name, version, tail = fn.split('_', 3)
+                pkgs[(name, version)] = p
             except ValueError:
-                raise ValueError('Could not determine package version from '
-                                 'package filename. Please rename the .deb '
-                                 'to standard debian convention '
-                                 '(name_version.deb) or supply a specific '
-                                 'version by passing a dictionary parameter.')
+                raise ValueError(
+                    'Could not determine package version from '
+                    'package filename {}. Please rename the .deb '
+                    'to standard debian convention '
+                    '(name_version_arch.deb) or supply a specific '
+                    'version by passing a dictionary parameter.'.format(fn))
 
     # log names
     log.debug('Package names: ' + ', '.join('{} -> {}'.format(k, v)
@@ -293,17 +309,17 @@ def dpkg_install(paths, check=True):
         missing = []
         installed = info_installed_packages()
 
-        for name in pkgs:
-            if name not in installed:
-                missing.append(name)
+        for name, version in pkgs:
+            if name not in installed or not installed[name].eq_version(
+                    version):
+                missing.append((name, version))
     else:
         missing = pkgs.keys()
 
     log.debug('Installing packages: {}'.format(missing))
 
     if not missing:
-        return Unchanged('Packages {} already installed'.format(', '.join(
-            pkgs.keys())))
+        return Unchanged('Packages {!r} already installed'.format(pkgs.keys()))
 
     # FIXME: see above
     info_installed_packages.invalidate_cache()
@@ -311,9 +327,9 @@ def dpkg_install(paths, check=True):
     with fs.remote_tmpdir() as rtmp:
         # upload packages to be installed
         pkg_files = []
-        for name in missing:
-            fs.upload_file(pkgs[name])
-            pkg_files.append(remote.path.join(rtmp, pkgs[name]))
+        for key in missing:
+            fs.upload_file(pkgs[key])
+            pkg_files.append(remote.path.join(rtmp, pkgs[key]))
 
         # install in a single dpkg install line
         # FIXME: add debconf default and such (same as apt)
@@ -321,7 +337,7 @@ def dpkg_install(paths, check=True):
         args.extend(pkg_files)
         proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
 
-    return Changed(msg='Installed packages {}'.format(', '.join(missing)))
+    return Changed(msg='Installed packages {!r}'.format(missing))
 
 
 @operation()

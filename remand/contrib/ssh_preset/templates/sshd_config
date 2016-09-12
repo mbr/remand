@@ -53,7 +53,9 @@ AcceptEnv LC_IDENTIFICATION LC_ALL LANGUAGE
 AllowAgentForwarding {{'yes' if agent_forwarding else 'no'}}
 X11Forwarding {{'yes' if x11 else 'no'}}
 AllowTcpForwarding {{'yes' if tcp_forwarding else 'no'}}
+{% if info['ssh.openssh_version'] and info['ssh.openssh_version'][:2] >= (6, 7) -%}
 AllowStreamLocalForwarding {{'yes' if unix_forwarding else 'no'}}
+{% endif %}
 PermitTunnel {{'yes' if tunnel else 'no'}}
 
 {% if sftp_enabled -%}

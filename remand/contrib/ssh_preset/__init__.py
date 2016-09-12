@@ -1,8 +1,8 @@
 import os
 
-from remand.lib import fs, systemd
+from remand.lib import fs, proc, systemd
 
-from remand import Plan, operation, Changed, Unchanged
+from remand import Plan, operation, Changed, Unchanged, info
 
 ssh_preset = Plan(__name__, os.path.dirname(__file__))
 
@@ -21,7 +21,8 @@ def install_strict_ssh(allow_users=['root'],
                        tunnel=False,
                        port=22,
                        use_dns=False,
-                       auto_restart=True):
+                       auto_restart=True,
+                       check_sshd_config=True):
     # FIXME: change default in jinja templates to strict reporting of missing
     #        values to avoid creating broken ssh configs
     # FIXME: add (possibly generic) support for atomic-tested-configuration
@@ -41,6 +42,9 @@ def install_strict_ssh(allow_users=['root'],
                                       port=port)
 
     if fs.upload_string(tpl, '/etc/ssh/sshd_config').changed:
+        if check_sshd_config:
+            proc.run(['sshd', '-t'])
+
         if auto_restart:
             systemd.restart_unit('ssh.service')
         return Changed(msg='Changed sshd configuration')

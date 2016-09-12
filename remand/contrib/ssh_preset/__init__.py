@@ -20,7 +20,8 @@ def install_strict_ssh(allow_users=['root'],
                        unix_forwarding=True,
                        tunnel=False,
                        port=22,
-                       use_dns=False):
+                       use_dns=False,
+                       auto_restart=True):
     # FIXME: change default in jinja templates to strict reporting of missing
     #        values to avoid creating broken ssh configs
     # FIXME: add (possibly generic) support for atomic-tested-configuration
@@ -40,6 +41,7 @@ def install_strict_ssh(allow_users=['root'],
                                       port=port)
 
     if fs.upload_string(tpl, '/etc/ssh/sshd_config').changed:
-        systemd.restart_unit('ssh.service')
+        if auto_restart:
+            systemd.restart_unit('ssh.service')
         return Changed(msg='Changed sshd configuration')
     return Unchanged(msg='sshd config already strict')

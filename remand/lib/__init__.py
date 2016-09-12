@@ -17,7 +17,8 @@ class InfoManager(object):
         try:
             modname, funcname = k.rsplit('.', 1)
         except ValueError:
-            raise ConfigurationError('Not a valid name: {}'.format(k))
+            raise ConfigurationError(
+                'Not a valid info entry (must be `module.name`): {}'.format(k))
         funcname = 'info_{}'.format(funcname)
         modname = 'remand.lib.{}'.format(modname)
 

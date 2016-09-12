@@ -1,3 +1,5 @@
+import re
+
 from remand import util, log
 
 
@@ -14,6 +16,15 @@ class EditableFile(object):
     def _get_hash(self):
         with self.open('rb') as f:
             return util.hash_file(f)
+
+    def comment_out(self, regexp, prefix='# '):
+        lines = []
+        for line in self.lines():
+            if re.search(regexp, line) and not line.startswith(prefix):
+                lines.append(prefix + line)
+            else:
+                lines.append(line)
+        self.set_lines(lines)
 
     def lines(self):
         with self.open('r') as f:

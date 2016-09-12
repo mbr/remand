@@ -45,6 +45,7 @@ def install_strict_ssh(allow_users=['root'],
         if check_sshd_config:
             proc.run(['sshd', '-t'])
 
+        # FIXME: we may want to abstract the init-system here
         if auto_restart:
             systemd.restart_unit('ssh.service')
         return Changed(msg='Changed sshd configuration')

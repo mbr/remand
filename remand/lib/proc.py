@@ -58,7 +58,7 @@ def run(cmd,
     proc = remote.popen(args, extra_env=extra_env, cwd=cwd)
     stdout, stderr = proc.communicate(input)
 
-    if proc.returncode not in status_ok:
+    if status_ok != 'any' and proc.returncode not in status_ok:
         log.debug('stdout: {}'.format(stdout))
         log.debug('stderr: {}'.format(stderr))
 

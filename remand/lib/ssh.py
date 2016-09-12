@@ -1,10 +1,13 @@
 import os
+import re
 
 from remand import config, info, log, remote, util
-from remand.lib import fs, proc, systemd
+from remand.lib import fs, proc, systemd, memoize
 from remand.operation import operation, Changed, Unchanged
 
 from sshkeys import Key
+
+OPENSSH_VERSION_RE = re.compile(r'^OpenSSH_(\d)+.(\d+)([^\s]+)')
 
 
 class KeyFile(object):
@@ -19,6 +22,19 @@ class KeyFile(object):
 
     def __str__(self):
         return ''.join(k.to_pubkey_line() + '\n' for k in self.keys)
+
+
+# FIXME: needs a generic way to invalidate ("invalidated on .. software
+#        install", "... on file upload")
+# FIXME: example: memorize(..., invalidated_by=['pkg_install', 'fs_change'])
+@memoize()
+def info_openssh_version():
+    stdout, stderr, rval = proc.run(['sshd', '-?'], status_ok='any')
+
+    if rval == 1:
+        m = OPENSSH_VERSION_RE.match(stderr.splitlines()[1])
+        if m:
+            return (int(m.group(1)), int(m.group(2)), m.group(3))
 
 
 def get_authorized_keys_file(user):

@@ -13,7 +13,7 @@ from remand.operation import operation, Unchanged, Changed
 class PackageRecord(namedtuple('PackageRecord', 'name,version')):
     def eq_version(self, other_version):
         sver = self.version
-        over = self.version
+        over = other_version
 
         # handle epochs (1:1.2.3)
         if sver[1] != ':':

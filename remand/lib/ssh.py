@@ -2,7 +2,7 @@ import os
 import re
 
 from remand import config, info, log, remote, util
-from remand.lib import fs, proc, systemd, memoize
+from remand.lib import fs, posix, proc, systemd, memoize
 from remand.operation import operation, Changed, Unchanged
 
 from sshkeys import Key
@@ -150,5 +150,14 @@ def regenerate_host_keys(mark='/etc/ssh/host_keys_regenerated'):
 
 
 @operation()
-def grant_me_root(my_key='~/.ssh/id_rsa.pub'):
-    return set_authorized_keys([os.path.expanduser(my_key)], user='root')
+def grant_me_root(my_key='~/.ssh/id_rsa.pub', unlock_root=True):
+    c = set_authorized_keys([os.path.expanduser(my_key)], user='root').changed
+
+    if unlock_root:
+        # we need to unlock the root user, otherwise a login is not possible
+        # via ssh
+        c |= posix.set_unlocked_no_password('root').changed
+
+    if c:
+        return Changed(msg='Granted root ssh login')
+    return Unchanged(msg='Already have root login')

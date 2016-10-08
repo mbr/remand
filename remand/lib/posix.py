@@ -195,3 +195,48 @@ def userdel(name, remove_home=False, force=False):
 
     info_users.invalidate_cache()
     return Changed(msg='Removed user {}'.format(name))
+
+
+ShadowEntryBase = namedtuple('ShadowEntryBase', ['name',
+                                                 'password_encrypted',
+                                                 'last_change',
+                                                 'min_age',
+                                                 'max_age',
+                                                 'warn_period',
+                                                 'inact_period',
+                                                 'expires',
+                                                 'reserved', ])
+
+
+class ShadowEntry(ShadowEntryBase):
+    @classmethod
+    def from_line(cls, l):
+        return cls(*l.split(':'))
+
+    def to_line(self):
+        return ':'.join(self)
+
+
+@operation()
+def set_unlocked_no_password(names):
+    # FIXME: decide API guidelines, add typechecking once Python3 is available
+    # example: passing a string to names will work, but result in non-sensical
+    # results.
+    with fs.edit('/etc/shadow', create=False) as shadow:
+        new_lines = []
+
+        for line in shadow.lines():
+            entry = ShadowEntry.from_line(line)
+
+            if entry.name in names:
+                entry = entry._replace(password_encrypted='*')
+                new_lines.append(entry.to_line())
+            else:
+                new_lines.append(line)
+
+        shadow.set_lines(new_lines)
+
+    if shadow.changed:
+        return Changed(msg='Unlocked users {}'.format(names))
+
+    return Unchanged(msg='Users {} already unlocked'.format(names))

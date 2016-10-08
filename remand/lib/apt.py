@@ -395,7 +395,8 @@ def add_repo(distribution,
              components=['main'],
              site='http://http.debian.net/debian',
              src=False,
-             arch=[]):
+             arch=[],
+             name=None):
     comps = ' '.join(components)
 
     options = ''
@@ -407,11 +408,12 @@ def add_repo(distribution,
                                     site,
                                     distribution,
                                     comps, )
-    path = remote.path.join(config['apt_sources_list_d'],
-                            '{}_{}{}.list'.format(distribution,
-                                                  '_'.join(components), '' if
-                                                  not src else '-sources'))
 
+    if name is None:
+        name = '{}_{}{}'.format(distribution, '_'.join(components), '' if
+                                not src else '-sources')
+
+    path = remote.path.join(config['apt_sources_list_d'], name + '.list')
     upload = fs.upload_string(line, path, create_parent=True)
 
     if upload.changed:

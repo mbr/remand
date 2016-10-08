@@ -156,7 +156,7 @@ def grant_me_root(my_key='~/.ssh/id_rsa.pub', unlock_root=True):
     if unlock_root:
         # we need to unlock the root user, otherwise a login is not possible
         # via ssh
-        c |= posix.set_unlocked_no_password('root').changed
+        c |= posix.set_unlocked_no_password(['root']).changed
 
     if c:
         return Changed(msg='Granted root ssh login')

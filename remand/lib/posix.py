@@ -89,12 +89,10 @@ def info_hostname():
 
 
 @operation()
-def set_hostname(hostname):
-    # FIXME: update hosts file
+def set_hostname(hostname, domain=None):
     prev_hostname = info_hostname()
 
     changed = False
-
     changed |= fs.upload_string('{}\n'.format(hostname),
                                 '/etc/hostname').changed
 
@@ -102,8 +100,29 @@ def set_hostname(hostname):
         proc.run(['hostname', hostname])
         changed = True
 
+    # update /etc/hosts
+    # this will also set the domain name
+    # see http://jblevins.org/log/hostname
+    #
+    # we adopt the following convention:
+
+    host_line = '127.0.1.1\t' + hostname
+    if domain:
+        host_line = '127.0.1.1\t{}.{}\t{}'.format(hostname, domain, hostname)
+
+    with fs.edit('/etc/hosts') as hosts:
+        if host_line not in hosts.lines():
+            hosts.comment_out(r'^127.0.1.1')
+
+            # comment out old lines
+            lines = [host_line] + hosts.lines()
+            hosts.set_lines(lines)
+
+    changed |= hosts.changed
+
     if changed:
         info_hostname.invalidate_cache()
+        info_fqdn.invalidate_cache()
         return Changed(msg='Hostname changed from {} to {}'.format(
             prev_hostname, hostname))
 

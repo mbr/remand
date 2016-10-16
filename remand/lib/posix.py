@@ -77,8 +77,14 @@ def info_system():
 
 
 @memoize()
-def info_hostname():
+def info_fqdn():
     res, _, _ = proc.run(['hostname', '--fqdn'])
+    return res.strip()
+
+
+@memoize()
+def info_hostname():
+    res, _, _ = proc.run(['hostname'])
     return res.strip()
 
 

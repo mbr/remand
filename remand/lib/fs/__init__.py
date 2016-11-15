@@ -387,6 +387,7 @@ def upload_string(buf, remote_path, create_parent=False):
 @operation()
 def upload_tree(local_path, remote_path):
     # FIXME: think about implications regarding ownership, other attributes
+    # FIXME: allow removing (sync)
     create_dir(remote_path)
     changed = False
 

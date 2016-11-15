@@ -400,9 +400,8 @@ def upload_tree(local_path, remote_path):
             local_fn = os.path.join(dirpath, fn)
             remote_fn = remote.path.join(rem, fn)
 
-            changed |= upload_file(local_fn,
-                                   remote_fn,
-                                   follow_symlink=False).changed
+            changed |= upload_file(
+                local_fn, remote_fn, follow_symlink=False).changed
 
     if changed:
         return Changed(

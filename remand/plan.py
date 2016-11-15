@@ -124,7 +124,7 @@ class WebResourceHandler(ResourceHandlerMixin):
                 out, closing(requests.get(url, stream=True)) as resp:
             resp.raise_for_status()
 
-            for chunk in resp.iter_content(config['buffer_size']):
+            for chunk in resp.iter_content(int(config['buffer_size'])):
                 h.update(chunk)
                 out.write(chunk)
 

@@ -21,14 +21,15 @@ def install_docker_compose():
 
 
 @operation()
-def install_docker():
+def install_docker(arch=None):
     # docker: needs repo, https transport and key
     ch = apt.install_packages(['apt-transport-https', 'ca-certificates'
                                ]).changed
     ch |= apt.add_apt_keys(docker.files['docker-repo-key.asc']).changed
     ch |= apt.add_repo('debian-jessie',
                        site='https://apt.dockerproject.org/repo',
-                       arch=['amd64']).changed
+                       arch=arch,
+                       name='docker').changed
 
     # remove possibly installed old version
     ch |= apt.remove_packages(['docker.io', 'lxc-docker'], purge=True).changed

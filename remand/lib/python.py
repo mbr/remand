@@ -13,13 +13,15 @@ class VirtualEnv(object):
         # FIXME: check if python version and global_site_packages are correct,
         #        and correct / recreat (--clear?) otherwise
 
-        if not remote.path.stat(self.python):
+        if not remote.stat(self.python):
             args = [config['cmd_venv'], '-p', config['venv_python_path'], ]
 
             if global_site_packages:
                 args.append('--system-site-packages')
             else:
                 args.append('--no-site-packages')
+
+            args.append(self.remote_path)
 
             proc.run(args)
 
@@ -34,11 +36,11 @@ class VirtualEnv(object):
 
     @property
     def python(self):
-        self.get_bin('python')
+        return self.get_bin('python')
 
     @property
     def pip(self):
-        self.get_bin('pip')
+        return self.get_bin('pip')
 
     def install(self, pkgs, editable=False):
         # FIXME: collect changes

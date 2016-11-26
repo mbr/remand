@@ -42,20 +42,24 @@ class VirtualEnv(object):
     def pip(self):
         return self.get_bin('pip')
 
-    def install(self, pkgs, editable=False):
+    def install(self, pkgs, upgrade=True, editable=False):
         # FIXME: collect changes
 
         args = [self.pip, 'install']
         if editable:
             args.append('-e')
+        if upgrade:
+            args.append('-U')
         args.extend(pkgs)
 
         return proc.run(args)
 
-    def install_requirements(self, requirements_txt):
+    def install_requirements(self, requirements_txt, upgrade=False):
         # FIXME: collect changes, via freeze?
 
         args = [self.pip, 'install', '-r', requirements_txt]
+        if upgrade:
+            args.append('-U')
         return proc.run(args)
 
     def install_gitssh(self,
@@ -64,6 +68,7 @@ class VirtualEnv(object):
                        user='git',
                        branch='master',
                        egg=None,
+                       upgrade=True,
                        editable=False):
         # FIXME: with newer git versions, we'd find a way here to pass in
         #        the deployment key, which would allow not having to store
@@ -74,6 +79,6 @@ class VirtualEnv(object):
             url += '#egg=' + egg
 
         # FIXME: determine changes?
-        self.install([url], editable=editable)
+        self.install([url], upgrade=upgrade, editable=editable)
 
         return Changed(msg='Installed {}'.format(url))

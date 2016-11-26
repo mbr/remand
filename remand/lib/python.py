@@ -45,7 +45,7 @@ class VirtualEnv(object):
     def install(self, pkgs, editable=False):
         # FIXME: collect changes
 
-        args = [self.pip]
+        args = [self.pip, 'install']
         if editable:
             args.append('-e')
         args.extend(pkgs)
@@ -55,7 +55,7 @@ class VirtualEnv(object):
     def install_requirements(self, requirements_txt):
         # FIXME: collect changes, via freeze?
 
-        args = [self.pip, '-r', requirements_txt]
+        args = [self.pip, 'install', '-r', requirements_txt]
         return proc.run(args)
 
     def install_gitssh(self,
@@ -63,7 +63,8 @@ class VirtualEnv(object):
                        repo,
                        user='git',
                        branch='master',
-                       egg=None):
+                       egg=None,
+                       editable=False):
         # FIXME: with newer git versions, we'd find a way here to pass in
         #        the deployment key, which would allow not having to store
         #        the key on the server
@@ -71,3 +72,8 @@ class VirtualEnv(object):
 
         if egg is not None:
             url += '#egg=' + egg
+
+        # FIXME: determine changes?
+        self.install([url], editable=editable)
+
+        return Changed(msg='Installed {}'.format(url))

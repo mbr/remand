@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import posixpath
 
 
@@ -243,3 +244,13 @@ class Remote(object):
         :param times: A tuple of ``(atime, mtime)``.
         """
         raise NotImplementedError
+
+    @contextmanager
+    def umasked(self, context_umask):
+        """Temporary umask context manager.
+
+        :param context_umask: Umask to set within context.
+        """
+        old_umask = self.umask(context_umask)
+        yield
+        self.umask(old_umask)

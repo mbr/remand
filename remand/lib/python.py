@@ -68,7 +68,7 @@ class VirtualEnv(object):
         # FIXME: with newer git versions, we'd find a way here to pass in
         #        the deployment key, which would allow not having to store
         #        the key on the server
-        url = 'git+ssh://{}@{}{}@{}'.format(user, host, repo, branch)
+        url = 'git+ssh://{}@{}/{}@{}'.format(user, host, repo, branch)
 
         if egg is not None:
             url += '#egg=' + egg

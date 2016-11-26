@@ -47,6 +47,7 @@ def get_authorized_keys_file(user):
 
 AK_DIR_PERMS = 0o700
 AK_FILE_PERMS = 0o600
+KEY_FILE_PERMS = 0o600
 
 
 @operation()
@@ -167,8 +168,7 @@ def grant_me_root(my_key='~/.ssh/id_rsa.pub', unlock_root=True):
 def install_private_key(key_file,
                         user='root',
                         key_type='rsa',
-                        target_path=None,
-                        mode=0o600):
+                        target_path=None):
 
     if target_path is None:
         # FIXME: auto-determine key type if None
@@ -180,9 +180,13 @@ def install_private_key(key_file,
                                        fn)
 
     changed = False
-    with remote.umasked(0o777 - mode):
+    with remote.umasked(0o777 - KEY_FILE_PERMS):
+        changed |= fs.create_dir(
+            remote.path.dirname(target_path),
+            mode=AK_DIR_PERMS).changed
+
         changed |= fs.upload_file(key_file, target_path).changed
-        changed |= fs.chmod(target_path, mode=mode).changed
+        changed |= fs.chmod(target_path, mode=KEY_FILE_PERMS).changed
 
     if changed:
         return Changed(msg='Installed private key {}'.format(target_path))

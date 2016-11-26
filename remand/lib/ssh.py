@@ -180,13 +180,15 @@ def install_private_key(key_file,
                                        fn)
 
     changed = False
-    with remote.umasked(0o777 - KEY_FILE_PERMS):
-        changed |= fs.create_dir(
-            remote.path.dirname(target_path),
-            mode=AK_DIR_PERMS).changed
 
-        changed |= fs.upload_file(key_file, target_path).changed
-        changed |= fs.chmod(target_path, mode=KEY_FILE_PERMS).changed
+    # blocked: SSH transport does not suppoort
+    # with remote.umasked(0o777 - KEY_FILE_PERMS):
+    changed |= fs.create_dir(
+        remote.path.dirname(target_path),
+        mode=AK_DIR_PERMS).changed
+
+    changed |= fs.upload_file(key_file, target_path).changed
+    changed |= fs.chmod(target_path, mode=KEY_FILE_PERMS).changed
 
     if changed:
         return Changed(msg='Installed private key {}'.format(target_path))

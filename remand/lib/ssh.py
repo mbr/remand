@@ -161,3 +161,30 @@ def grant_me_root(my_key='~/.ssh/id_rsa.pub', unlock_root=True):
     if c:
         return Changed(msg='Granted root ssh login')
     return Unchanged(msg='Already have root login')
+
+
+@operation()
+def install_private_key(key_file,
+                        user='root',
+                        key_type='rsa',
+                        target_path=None,
+                        mode=0o600):
+
+    if target_path is None:
+        # FIXME: auto-determine key type if None
+        if key_type not in ('rsa', ):
+            raise NotImplementedError('Key type {} not supported')
+
+        fn = 'id_' + key_type
+        target_path = remote.path.join(info['posix.users'][user].home, '.ssh',
+                                       fn)
+
+    changed = False
+    with remote.umasked(0o777 - mode):
+        changed |= fs.upload_file(key_file, target_path).changed
+        changed |= fs.chmod(target_path, mode=mode).changed
+
+    if changed:
+        return Changed(msg='Installed private key {}'.format(target_path))
+    return Unchanged(
+        msg='Private key {} already installed'.format(target_path))

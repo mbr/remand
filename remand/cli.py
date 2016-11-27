@@ -13,6 +13,7 @@ from .configfiles import HostRegistry, load_configuration
 from .exc import RemandError, TransportError, ReconnectNeeded
 from .plan import Plan
 from .lib import InfoManager, proc
+from .remotes.chroot import ChrootRemote
 from .remotes.ssh import SSHRemote
 from .remotes.local import LocalRemote
 from .remotes.vagrant import VagrantRemote
@@ -23,6 +24,7 @@ all_transports = {
     'ssh': SSHRemote,
     'local': LocalRemote,
     'vagrant': VagrantRemote,
+    'chroot': ChrootRemote,
 }
 
 # core logger

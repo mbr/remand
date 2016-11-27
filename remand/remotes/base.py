@@ -48,7 +48,21 @@ class RemoteProcess(object):
         :param input: Data to send to stdin.
         :return: A tuple of ``(stdoutdata, stderrdata)``.
         """
-        raise NotImplementedError
+        collect_stdout = util.CollectThread(self.stdout)
+        collect_stderr = util.CollectThread(self.stderr)
+
+        bufsize = int(config['buffer_size'])
+        if input is not None:
+            util.write_all(self.stdin, input)
+        self.stdin.close()
+
+        # wait for stdout/stderr to finish
+        stdout_thread.join()
+        stderr_thread.join()
+
+        self.wait()
+
+        return (collect_stdout.get_result(), collect_stderr.get_result())
 
     def kill(self):
         """Kill the remote process.

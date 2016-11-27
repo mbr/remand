@@ -2,6 +2,7 @@ from fcntl import fcntl, F_GETFL, F_SETFL
 from functools import partial
 import os
 import sys
+import threading
 
 import hashlib
 import inflection
@@ -79,11 +80,11 @@ def indent(prefix, s):
 #     fcntl(f, F_SETFL, flags | os.O_NONBLOCK)
 
 
-class CollectThread(object):
+class CollectThread(threading.Thread):
     def __init__(self, input_source, *args, **kwargs):
         super(CollectThread, self).__init__(*args, **kwargs)
         self.buffer = []
-        self.input_source = src
+        self.input_source = input_source
         self.setDaemon(True)
         self.start()
 
@@ -99,7 +100,7 @@ class CollectThread(object):
         except Exception as e:
             self.buffer.append(e)
         finally:
-            src.close()
+            self.input_source.close()
 
 
 def write_all(dest, input, bufsize):

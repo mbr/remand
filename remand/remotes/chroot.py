@@ -1,9 +1,9 @@
 import os
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 import queue
 
-from .. import log, util
-from .base import Remote
+from .. import log, util, config
+from .base import Remote, RemoteProcess
 
 
 def _is_subpath(path, start):
@@ -21,7 +21,7 @@ class ChrootViolation(Exception):
     pass
 
 
-class ChrootProcess(object):
+class ChrootProcess(RemoteProcess):
     stdout = None
     stderr = None
     stdin = None
@@ -63,7 +63,7 @@ class ChrootProcess(object):
         self.stdin = os.fdopen(stdin_w, 'wb')
 
         # create channel for return info
-        self._result_channel = multiprocessing.Queue()
+        self._result_channel = Queue()
 
         # immediately start
         self._ctrl_proc.start()
@@ -89,9 +89,9 @@ class ChrootProcess(object):
 
             proc.join()
         except Exception as e:
-            self._result_channel.send(e)
+            self._result_channel.put(e)
         else:
-            self._result_channel.send(proc.returncode)
+            self._result_channel.put(proc.returncode)
         finally:
             self._close_fds()
 
@@ -118,9 +118,16 @@ class ChrootRemote(Remote):
     chroot as well, even if they are absolute).
     """
 
-    def __init__(self, root):
+    def __init__(self):
+        uri = config['uri']
+
+        # ensure chroot is not mistakenly misused
+        assert not uri.host
+        assert not uri.port
+        assert uri.user == 'root'
+
         # ensure that self root has the form `/foo/bar` with no trailing slash
-        self.root = os.path.abspath(root)
+        self.root = os.path.abspath(uri.path)
         assert not self.root.endswith(os.sep)
 
         self._cwd = '/'
@@ -176,7 +183,7 @@ class ChrootRemote(Remote):
         return os.chown(self._lpath(path), uid, gid)
 
     def file(self, name, mode='r'):
-        return os.chown(self._lpath(name), mode)
+        return open(self._lpath(name), mode)
 
     def listdir(self, path):
         return os.listdir(self._lpath(path))

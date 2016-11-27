@@ -1,6 +1,8 @@
 from contextlib import contextmanager
 import posixpath
 
+from .. import util, config
+
 
 class RemoteProcess(object):
     """A remote process represents a process running on a remote instance.
@@ -57,8 +59,8 @@ class RemoteProcess(object):
         self.stdin.close()
 
         # wait for stdout/stderr to finish
-        stdout_thread.join()
-        stderr_thread.join()
+        collect_stdout.join()
+        collect_stderr.join()
 
         self.wait()
 
@@ -158,6 +160,10 @@ class Remote(object):
                  resolved.
         """
         raise NotImplementedError
+
+    def open(self, *args, **kwargs):
+        """Alias for `.file()`"""
+        return self.file(*args, **kwargs)
 
     def popen(self, args, cwd=None, extra_env={}):
         """Open a process on the remote side.

@@ -70,6 +70,11 @@ class ChrootProcess(RemoteProcess):
         # immediately start
         self._ctrl_proc.start()
 
+        # close our fd ends
+        os.close(self._stdout_w)
+        os.close(self._stderr_w)
+        os.close(self._stdin_r)
+
     def run(self):
         # NOTE: `run` is executed in a seperate process
 

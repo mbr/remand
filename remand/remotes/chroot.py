@@ -26,9 +26,11 @@ class ChrootProcess(RemoteProcess):
     stderr = None
     stdin = None
 
+    _returncode = None
+
     @property
     def returncode(self):
-        if self._returncode:
+        if self._returncode is not None:
             return self._returncode
 
         try:

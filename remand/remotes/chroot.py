@@ -1,6 +1,4 @@
 import os
-from multiprocessing import Process, Queue
-import queue
 import subprocess
 
 from .. import log, util, config
@@ -20,110 +18,6 @@ def _is_subpath(path, start):
 
 class ChrootViolation(Exception):
     pass
-
-
-class ChrootProcess(RemoteProcess):
-    stdout = None
-    stderr = None
-    stdin = None
-
-    _returncode = None
-
-    @property
-    def returncode(self):
-        if self._returncode is not None:
-            return self._returncode
-
-        try:
-            rc = self._result_channel.get_nowait()
-        except queue.Empty:
-            return None
-
-        # exceptions
-        if isinstance(rc, Exception):
-            log.error('Chrooted process failed: {}'.format(rc))
-            self._returncode = -1
-            return -1
-
-        self._returncode = rc
-        return rc
-
-    def __init__(self, remote, args, cwd=None, extra_env={}):
-        self._remote = remote
-        self._ctrl_proc = Process(target=self.run)
-        self._ctrl_proc.daemon = True
-        self._args = args
-        self._cwd = cwd
-        self._extra_env = extra_env
-
-        # create the necessary pipes for the process
-        (stdout_r, self._stdout_w) = os.pipe()
-        (stderr_r, self._stderr_w) = os.pipe()
-        (self._stdin_r, stdin_w) = os.pipe()
-
-        self.stdout = os.fdopen(stdout_r, 'rb')
-        self.stderr = os.fdopen(stderr_r, 'rb')
-        self.stdin = os.fdopen(stdin_w, 'wb')
-
-        # create channel for return info
-        self._result_channel = Queue()
-
-        # immediately start
-        self._ctrl_proc.start()
-
-        # close our fd ends
-        os.close(self._stdout_w)
-        os.close(self._stderr_w)
-        os.close(self._stdin_r)
-
-    def run(self):
-        # NOTE: `run` is executed in a seperate process
-
-        try:
-            # using os.chroot breaks a lot of things if the exact same python
-            # libs aren't installed inside the chroot
-            # os.chroot(self._remote.root)
-
-            # create environment
-            env = {}
-            env.update(os.environ)
-            env.update(self._extra_env)
-
-            # open the subprocess
-            args = [config['cmd_chroot'], self._remote.root]
-            args.extend(self._args)
-            proc = subprocess.Popen(
-                args,
-                cwd=(self._cwd or self._remote._cwd).encode('ascii'),
-                env=env,
-                stdin=self._stdin_r,
-                stderr=self._stderr_w,
-                stdout=self._stdout_w)
-            proc.wait()
-        except Exception as e:
-            print('Exception in run(): {}'.format(e))
-            import traceback
-            traceback.print_exc(e)
-            self._result_channel.put(e)
-        else:
-            self._result_channel.put(proc.returncode)
-        finally:
-            self._close_fds()
-
-    def poll(self):
-        return _ctrl_proc.is_alive()
-
-    def wait(self):
-        self._ctrl_proc.join()
-
-    def kill(self):
-        self._ctrl_proc.terminate()
-        self._close_fds()
-
-    def _close_fds(self):
-        os.close(self._stdin_r)
-        os.close(self._stderr_w)
-        os.close(self._stdout_w)
 
 
 class ChrootRemote(Remote):
@@ -220,7 +114,29 @@ class ChrootRemote(Remote):
         return os.sep + lpath[len(self.root)]
 
     def popen(self, args, cwd=None, extra_env={}):
-        return ChrootProcess(self, args, cwd, extra_env)
+        env = {}
+        env.update(os.environ)
+        env.update(extra_env)
+
+        proc = subprocess.Popen(args,
+                                cwd=cwd or self.getcwd(),
+                                env=env,
+                                stdin=subprocess.PIPE,
+                                stderr=subprocess.PIPE,
+                                stdout=subprocess.PIPE)
+
+        # FIXME: copied from LocalRemote; both need replacement
+        orig_communicate = proc.communicate
+
+        # decorate communicate to accept read instances
+        def _communicate(input):
+            if input and hasattr(input, 'read'):
+                input = input.read()
+            return orig_communicate(input)
+
+        proc.communicate = _communicate
+
+        return proc
 
     def readlink(self, path):
         return self._rpath(os.readlink(self._lpath(path)))

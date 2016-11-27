@@ -100,3 +100,13 @@ class CollectThread(object):
             self.buffer.append(e)
         finally:
             src.close()
+
+
+def write_all(dest, input, bufsize):
+    if hasattr(input, 'read'):
+        for chunk in iter(partial(input.read, bufsize), ''):
+            dest.write(chunk)
+        # log.debug('write_all: Chunk sent')
+    else:
+        # log.debug('write_all: Input sent')
+        dest.write(input)

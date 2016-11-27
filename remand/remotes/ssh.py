@@ -145,14 +145,7 @@ class SSHRemoteProcess(RemoteProcess):
 
         bufsize = int(config['buffer_size'])
         if input is not None:
-            if hasattr(input, 'read'):
-                for chunk in iter(partial(input.read, bufsize), ''):
-                    self.stdin.write(chunk)
-                log.debug('communicate: Chunk sent')
-            else:
-                log.debug('communicate: Input sent')
-                self.stdin.write(input)
-
+            util.write_all(self.stdin, input)
         self.stdin.close()
 
         # wait for stdout/stderr to finish

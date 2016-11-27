@@ -1,6 +1,7 @@
 import os
 from multiprocessing import Process, Queue
 import queue
+import subprocess
 
 from .. import log, util, config
 from .base import Remote, RemoteProcess
@@ -79,22 +80,30 @@ class ChrootProcess(RemoteProcess):
         # NOTE: `run` is executed in a seperate process
 
         try:
-            os.chroot(self._remote.root)
+            # using os.chroot breaks a lot of things if the exact same python
+            # libs aren't installed inside the chroot
+            # os.chroot(self._remote.root)
 
             # create environment
             env = {}
             env.update(os.environ)
-            env.update(self.extra_env)
+            env.update(self._extra_env)
 
             # open the subprocess
-            proc = subprocess.Popen(args,
-                                    cwd=self.cwd or self._remote.cwd,
-                                    env=env,
-                                    stdin=self._stdin_r,
-                                    stderr=self._stderr_w,
-                                    stdout=self._stdout_w)
-            proc.join()
+            args = [config['cmd_chroot'], self._remote.root]
+            args.extend(self._args)
+            proc = subprocess.Popen(
+                args,
+                cwd=(self._cwd or self._remote._cwd).encode('ascii'),
+                env=env,
+                stdin=self._stdin_r,
+                stderr=self._stderr_w,
+                stdout=self._stdout_w)
+            proc.wait()
         except Exception as e:
+            print('Exception in run(): {}'.format(e))
+            import traceback
+            traceback.print_exc(e)
             self._result_channel.put(e)
         else:
             self._result_channel.put(proc.returncode)

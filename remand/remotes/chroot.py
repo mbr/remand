@@ -1,5 +1,10 @@
 import os
+from multiprocessing import Process
+import queue
+import threading
+import time
 
+from .. import log
 from .base import Remote
 
 
@@ -16,6 +21,107 @@ def _is_subpath(path, start):
 
 class ChrootViolation(Exception):
     pass
+
+
+class ChrootProcess(object):
+    stdout = None
+    stderr = None
+    stdin = None
+
+    @property
+    def returncode(self):
+        if self._returncode:
+            return self._returncode
+
+        try:
+            rc = self._result_channel.get_nowait()
+        except queue.Empty:
+            return None
+
+        # exceptions
+        if isinstance(rc, Exception):
+            log.error('Chrooted process failed: {}'.format(rc))
+            self._returncode = -1
+            return -1
+
+        self._returncode = rc
+        return rc
+
+    def __init__(self, remote, args, cwd=None, extra_env={}):
+        self._remote = remote
+        self._ctrl_proc = Process(target=self.run)
+        self._ctrl_proc.daemon = True
+        self._args = args
+        self._cwd = cwd
+        self._extra_env = extra_env
+
+        # create the necessary pipes for the process
+        (stdout_r, self._stdout_w) = os.pipe()
+        (stderr_r, self._stderr_w) = os.pipe()
+        (self._stdin_r, stdin_w) = os.pipe()
+
+        self.stdout = os.fdopen(stdout_r, 'rb')
+        self.stderr = os.fdopen(stderr_r, 'rb')
+        self.stdin = os.fdopen(stdin_w, 'wb')
+
+        # create channel for return info
+        self._result_channel = multiprocessing.Queue()
+
+        # immediately start
+        self._ctrl_proc.start()
+
+    def run(self):
+        # NOTE: `run` is executed in a seperate process
+
+        try:
+            os.chroot(self.remote.root)
+
+            # create environment
+            env = {}
+            env.update(os.environ)
+            env.update(self.extra_env)
+
+            # open the subprocess
+            proc = subprocess.Popen(args,
+                                    cwd=self.cwd or self.remote.cwd,
+                                    env=env,
+                                    stdin=self._stdin_r,
+                                    stderr=self._stderr_w,
+                                    stdout=self._stdout_w)
+
+            proc.join()
+        except Exception as e:
+            self._result_channel.send(e)
+        else:
+            self._result_channel.send(proc.returncode)
+        finally:
+            self._close_fds()
+
+    def poll(self):
+        return _ctrl_proc.is_alive()
+
+    def wait(self):
+        self._ctrl_proc.join()
+
+    def communicate(self, input=None):
+        # FIXME: this will block
+        raise NotImplementedError()
+
+        self.stdin.write(input)
+
+        stdoutdata = self.stdout.read()
+        stderrdata = self.stderr.read()
+
+        return (stdoutdata, stderrdata)
+
+    def kill(self):
+        self._ctrl_proc.terminate()
+        self._close_fds()
+
+    def _close_fds(self):
+        os.close(self._stdin_r)
+        os.close(self._stderr_w)
+        os.close(self._stdout_w)
 
 
 class ChrootRemote(Remote):
@@ -105,7 +211,7 @@ class ChrootRemote(Remote):
         return os.sep + lpath[len(self.root)]
 
     def popen(self, args, cwd=None, extra_env={}):
-        raise NotImplementedError
+        return ChrootProcess(self, args, cwd, extra_env)
 
     def readlink(self, path):
         return self._rpath(os.readlink(self._lpath(path)))

@@ -79,7 +79,7 @@ class ChrootProcess(RemoteProcess):
         # NOTE: `run` is executed in a seperate process
 
         try:
-            os.chroot(self.remote.root)
+            os.chroot(self._remote.root)
 
             # create environment
             env = {}
@@ -88,12 +88,11 @@ class ChrootProcess(RemoteProcess):
 
             # open the subprocess
             proc = subprocess.Popen(args,
-                                    cwd=self.cwd or self.remote.cwd,
+                                    cwd=self.cwd or self._remote.cwd,
                                     env=env,
                                     stdin=self._stdin_r,
                                     stderr=self._stderr_w,
                                     stdout=self._stdout_w)
-
             proc.join()
         except Exception as e:
             self._result_channel.put(e)

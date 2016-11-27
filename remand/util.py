@@ -1,4 +1,6 @@
+from fcntl import fcntl, F_GETFL, F_SETFL
 from functools import partial
+import os
 import sys
 
 import hashlib
@@ -67,3 +69,34 @@ def plural_n(word, times=2):
 
 def indent(prefix, s):
     return prefix + ('\n' + prefix).join(line for line in s.splitlines())
+
+# unused:
+# def set_non_blocking(f):
+#     if hasattr(f, 'fileno'):
+#         f = f.fileno()
+
+#     flags = fcntl(f, F_GETFL)
+#     fcntl(f, F_SETFL, flags | os.O_NONBLOCK)
+
+
+class CollectThread(object):
+    def __init__(self, input_source, *args, **kwargs):
+        super(CollectThread, self).__init__(*args, **kwargs)
+        self.buffer = []
+        self.input_source = src
+        self.setDaemon(True)
+        self.start()
+
+    def get_result(self):
+        if isinstance(self.buffer[0], Exception):
+            raise self.buffer[0]
+        else:
+            return self.buffer[0]
+
+    def run(self):
+        try:
+            self.buffer.append(self.input_source.read())
+        except Exception as e:
+            self.buffer.append(e)
+        finally:
+            src.close()

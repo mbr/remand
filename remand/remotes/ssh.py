@@ -140,23 +140,8 @@ class SSHRemoteProcess(RemoteProcess):
         self.returncode = self._channel.recv_exit_status()
 
     def communicate(self, input=None):
-        def read_thread(src, buffer):
-            try:
-                buffer.append(src.read())
-            except Exception as e:
-                buffer.append(e)
-
-        stdout = []
-        stderr = []
-
-        stdout_thread = Thread(target=read_thread, args=(self.stdout, stdout))
-        stderr_thread = Thread(target=read_thread, args=(self.stderr, stderr))
-
-        stdout_thread.setDaemon(True)
-        stderr_thread.setDaemon(True)
-
-        stdout_thread.start()
-        stderr_thread.start()
+        collect_stdout = util.CollectThread(self.stdout)
+        collect_stderr = util.CollectThread(self.stderr)
 
         bufsize = int(config['buffer_size'])
         if input is not None:
@@ -174,18 +159,9 @@ class SSHRemoteProcess(RemoteProcess):
         stdout_thread.join()
         stderr_thread.join()
 
-        self.stdout.close()
-        self.stderr.close()
-
         self.wait()
 
-        if isinstance(stdout[0], Exception):
-            raise stdout[0]
-
-        if isinstance(stderr[0], Exception):
-            raise stderr[0]
-
-        return (stdout[0], stderr[0])
+        return (collect_stdout.get_result(), collect_stderr.get_result())
 
 
 class _ShutdownWrap(object):

@@ -1,10 +1,8 @@
 import os
 from multiprocessing import Process
 import queue
-import threading
-import time
 
-from .. import log
+from .. import log, util
 from .base import Remote
 
 
@@ -102,17 +100,6 @@ class ChrootProcess(object):
 
     def wait(self):
         self._ctrl_proc.join()
-
-    def communicate(self, input=None):
-        # FIXME: this will block
-        raise NotImplementedError()
-
-        self.stdin.write(input)
-
-        stdoutdata = self.stdout.read()
-        stderrdata = self.stderr.read()
-
-        return (stdoutdata, stderrdata)
 
     def kill(self):
         self._ctrl_proc.terminate()

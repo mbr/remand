@@ -28,6 +28,11 @@ class ChrootRemote(Remote):
     """
 
     def __init__(self):
+        # verify umask, same as local remote
+        umask = int(config['reset_umask'], 8)
+        log.debug('Setting umask to {:o}'.format(umask))
+        os.umask(umask)
+
         uri = config['uri']
 
         # ensure chroot is not mistakenly misused

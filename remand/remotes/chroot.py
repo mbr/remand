@@ -5,7 +5,7 @@ from .. import log, util, config
 from .base import Remote, RemoteProcess
 
 
-def _is_subpath(path, start, follow_symlink):
+def _is_subpath(path, start, follow_symlink=True):
     """Checks if a `path` is a subpath of `start`. Will follow symbolic links
     to check if they are pointing outside"""
 

@@ -66,9 +66,8 @@ class VirtualEnv(object):
             args.append('-U')
         proc.run(args)
 
-        return Changed(msg='Installed requirements from {} into {}',format(
-            requirements_txt, self.remote_path
-            ))
+        return Changed(msg='Installed requirements from {} into {}'.format(
+            requirements_txt, self.remote_path))
 
     @operation()
     def install_git(self,

@@ -1,4 +1,5 @@
 from remand import operation, remote, config, Changed, Unchanged
+from remand.exc import ConfigurationError
 from remand.lib import proc
 
 
@@ -70,18 +71,24 @@ class VirtualEnv(object):
             ))
 
     @operation()
-    def install_gitssh(self,
-                       host,
-                       repo,
-                       user='git',
-                       branch='master',
-                       egg=None,
-                       upgrade=True,
-                       editable=False):
+    def install_git(self,
+                    host,
+                    repo,
+                    user='git',
+                    branch='master',
+                    egg=None,
+                    upgrade=True,
+                    editable=False,
+                    protocol='git'):
         # FIXME: with newer git versions, we'd find a way here to pass in
         #        the deployment key, which would allow not having to store
         #        the key on the server
-        url = 'git+ssh://{}@{}/{}@{}'.format(user, host, repo, branch)
+        if protocol in ('http', 'https'):
+            url = 'git+{}://{}/{}@{}'.format(protocol, host, repo, branch)
+        elif protocol == 'git':
+            url = 'git+ssh://{}@{}/{}@{}'.format(user, host, repo, branch)
+        else:
+            raise ConfigurationError('Unknown protocol: {}'.format(protocol))
 
         if egg is not None:
             url += '#egg=' + egg

@@ -5,13 +5,17 @@ from .. import log, util, config
 from .base import Remote, RemoteProcess
 
 
-def _is_subpath(path, start):
+def _is_subpath(path, start, follow_symlink):
     """Checks if a `path` is a subpath of `start`. Will follow symbolic links
     to check if they are pointing outside"""
 
+    if follow_symlink:
+        start = os.path.realpath(start)
+        end = os.path.realpath(path)
+
     # normalize both paths
-    start = os.path.abspath(os.path.realpath(start))
-    path = os.path.abspath(os.path.realpath(path))
+    start = os.path.abspath(start)
+    path = os.path.abspath(path)
 
     return (path + os.sep).startswith(start + os.sep)
 
@@ -46,7 +50,7 @@ class ChrootRemote(Remote):
 
         self._cwd = '/'
 
-    def _lpath(self, rpath):
+    def _lpath(self, rpath, follow_symlink=True):
         """Convert a path from inside the chroot into one mapped onto the local
         filesystem.
 
@@ -67,7 +71,7 @@ class ChrootRemote(Remote):
         lpath = self.path.abspath(lpath)
 
         # security check: ensure we're not accidentally leaving the chroot
-        if not _is_subpath(lpath, self.root):
+        if not _is_subpath(lpath, self.root, follow_symlink=follow_symlink):
             raise ChrootViolation(
                 "Path {} violates chroot of {} [cwd: {}]".format(
                     path, self.root, self._cwd))
@@ -178,7 +182,7 @@ class ChrootRemote(Remote):
         return os.umask(umask)
 
     def unlink(self, path):
-        return os.unlink(self._lpath(path))
+        return os.unlink(self._lpath(path, follow_symlink=False))
 
     def utime(self, path, times):
         return os.utime(self._lpath(path), times)

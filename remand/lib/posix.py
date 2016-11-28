@@ -89,14 +89,14 @@ def info_hostname():
 
 
 @operation()
-def set_hostname(hostname, domain=None):
+def set_hostname(hostname, domain=None, update_live=True):
     prev_hostname = info_hostname()
 
     changed = False
     changed |= fs.upload_string('{}\n'.format(hostname),
                                 '/etc/hostname').changed
 
-    if prev_hostname != hostname:
+    if update_live and prev_hostname != hostname:
         proc.run(['hostname', hostname])
         changed = True
 

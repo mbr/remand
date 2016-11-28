@@ -110,7 +110,7 @@ class ChrootRemote(Remote):
         return os.lstat(lpath)
 
     def mkdir(self, path, mode=None):
-        return os.mkdir(self._lpath(path, mode))
+        return os.mkdir(self._lpath(path), mode)
 
     def normalize(self, path):
         lpath = self.lpath(path)

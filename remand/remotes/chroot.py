@@ -123,7 +123,10 @@ class ChrootRemote(Remote):
         env.update(os.environ)
         env.update(extra_env)
 
-        proc = subprocess.Popen(args,
+        ch_args = ['chroot', self.root]
+        ch_args.extend(args)
+
+        proc = subprocess.Popen(ch_args,
                                 cwd=cwd or self.getcwd(),
                                 env=env,
                                 stdin=subprocess.PIPE,

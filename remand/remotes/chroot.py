@@ -107,7 +107,7 @@ class ChrootRemote(Remote):
         return os.listdir(self._lpath(path))
 
     def lstat(self, path):
-        lpath = self._lpath(path)
+        lpath = self._lpath(path, follow_symlink=False)
         if not os.path.exists(lpath):
             return None
 

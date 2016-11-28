@@ -1,8 +1,6 @@
 from remand import operation, remote, config, Changed, Unchanged
 from remand.lib import proc
 
-# @operation()
-
 
 class VirtualEnv(object):
     def __init__(self, remote_path):

@@ -42,6 +42,7 @@ class VirtualEnv(object):
     def pip(self):
         return self.get_bin('pip')
 
+    @operation()
     def install(self, pkgs, upgrade=True, editable=False):
         # FIXME: collect changes
 
@@ -52,16 +53,25 @@ class VirtualEnv(object):
             args.append('-U')
         args.extend(pkgs)
 
-        return proc.run(args)
+        proc.run(args)
 
+        return Changed(msg='Installed packages {} into virtualenv {}'.format(
+            pkgs, self.remote_path))
+
+    @operation()
     def install_requirements(self, requirements_txt, upgrade=False):
         # FIXME: collect changes, via freeze?
 
         args = [self.pip, 'install', '-r', requirements_txt]
         if upgrade:
             args.append('-U')
-        return proc.run(args)
+        proc.run(args)
 
+        return Changed(msg='Installed requirements from {} into {}',format(
+            requirements_txt, self.remote_path
+            ))
+
+    @operation()
     def install_gitssh(self,
                        host,
                        repo,

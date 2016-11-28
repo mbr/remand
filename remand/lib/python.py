@@ -13,7 +13,7 @@ class VirtualEnv(object):
         #        and correct / recreat (--clear?) otherwise
 
         if not remote.stat(self.python):
-            args = [config['cmd_venv'], '-p', config['venv_python_path'], ]
+            args = [config['cmd_venv'], '-p', python, ]
 
             if global_site_packages:
                 args.append('--system-site-packages')

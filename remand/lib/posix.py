@@ -1,7 +1,10 @@
 from collections import namedtuple, OrderedDict
+from crypt import crypt
+import hashlib
+import os
 
 from remand import config, remote
-from remand.exc import RemoteFailureError
+from remand.exc import RemoteFailureError, ConfigurationError
 from remand.lib import proc, memoize, fs
 from remand.operation import operation, Unchanged, Changed
 
@@ -265,3 +268,54 @@ def set_unlocked_no_password(names):
         return Changed(msg='Unlocked users {}'.format(names))
 
     return Unchanged(msg='Users {} already unlocked'.format(names))
+
+
+@operation()
+def set_password(name, password=None, hashed=False, salt=None):
+    if salt is None:
+        salt = hashlib.sha1(os.urandom(64)).hexdigest()
+
+    if not hashed:
+        # hash using sha256
+        hash = crypt(password, "$6$" + salt)
+    else:
+        hash = password
+
+    # at this point, we have a hashed password
+    with fs.edit('/etc/shadow', create=False) as shadow:
+        new_lines = []
+
+        for line in shadow.lines():
+            entry = ShadowEntry.from_line(line)
+
+            if entry.name == name:
+                # we need to check if the password already matches (with a
+                # different salt)
+
+                pwc = entry.password_encrypted
+
+                need_update = True
+
+                if hashed:
+                    # we were supplied a hashed password, simply compare the
+                    # hashes
+                    need_update = (pwc != password)
+                else:
+                    # not hashed
+                    if '$' in pwc:
+                        lead = pwc[:pwc.rindex('$')]
+                        need_update = (crypt(password, lead) != pwc)
+
+                if need_update:
+                    entry = entry._replace(password_encrypted=hash)
+                    new_lines.append(entry.to_line())
+                    continue
+
+            new_lines.append(line)
+
+        shadow.set_lines(new_lines)
+
+    if shadow.changed:
+        return Changed(msg='Updated password for user {}'.format(name))
+
+    return Unchanged(msg='Password for {} already set'.format(name))

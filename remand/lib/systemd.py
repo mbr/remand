@@ -85,14 +85,14 @@ def install_unit_file(unit_file, reload=True):
 
 
 @operation()
-def enable_unit(unit_name):
-    state = get_unit_state(unit_name)
-
-    # we use 'WantedBy' as a guess whether or not the service is enabled
-    # when UnitFileState is not available (SysV init or older systemd)
-    ufs = state.get('UnitFileState')
-    if ufs == 'enabled' or ufs is None and 'WantedBy' in state:
-        return Unchanged(msg='{} already enabled'.format(unit_name))
+def enable_unit(unit_name, check_first=False):
+    if check_first:
+        state = get_unit_state(unit_name)
+        # we use 'WantedBy' as a guess whether or not the service is enabled
+        # when UnitFileState is not available (SysV init or older systemd)
+        ufs = state.get('UnitFileState')
+        if ufs == 'enabled' or ufs is None and 'WantedBy' in state:
+            return Unchanged(msg='{} already enabled'.format(unit_name))
 
     proc.run([config['cmd_systemctl'], 'enable', unit_name])
     return Changed(msg='Enabled {}'.format(unit_name))

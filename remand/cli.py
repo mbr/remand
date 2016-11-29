@@ -1,6 +1,7 @@
 import hashlib
 import os
 import time
+import sys
 
 import click
 import logbook
@@ -86,6 +87,8 @@ def cli(context, pkg_path, configfiles, debug):
 @click.argument('uris', default=None, nargs=-1, type=Uri.from_string)
 @click.pass_obj
 def run(obj, plan, uris):
+    failures = False
+
     with obj['plugin_source']:
         plan = Plan.load_from_file(plan)
 
@@ -156,11 +159,15 @@ def run(obj, plan, uris):
                     log.error('Automatic reconnects disabled, cannot continue')
             except RemandError as e:
                 log.error(str(e))
+                failures = True
             finally:
                 _context.pop()
 
     if not uris:
         log.notice('Nothing to do; no URIs given')
+
+    if failures:
+        sys.exit(1)
 
 
 FILE_PY_TPL = """{project}.webfiles.add_url(

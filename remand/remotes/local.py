@@ -22,10 +22,10 @@ class LocalRemote(Remote):
     listdir = os.listdir
 
     def lstat(self, path):
-        if not os.path.exists(path):
+        try:
+            return os.lstat(path)
+        except FileNotFoundError:
             return None
-
-        return os.lstat(path)
 
     mkdir = os.mkdir
     normalize = lambda path: os.path.abspath(os.path.realpath(path))
@@ -35,10 +35,10 @@ class LocalRemote(Remote):
     rmdir = os.rmdir
 
     def stat(self, path):
-        if not os.path.exists(path):
+        try:
+            return os.stat(path)
+        except FileNotFoundError:
             return None
-
-        return os.stat(path)
 
     symlink = os.symlink
     umask = os.umask

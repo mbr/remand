@@ -108,10 +108,11 @@ class ChrootRemote(Remote):
 
     def lstat(self, path):
         lpath = self._lpath(path, follow_symlink=False)
-        if not os.path.exists(lpath):
-            return None
 
-        return os.lstat(lpath)
+        try:
+            return os.lstat(lpath)
+        except FileNotFoundError:
+            return None
 
     def mkdir(self, path, mode=None):
         return os.mkdir(self._lpath(path), mode)
@@ -165,10 +166,10 @@ class ChrootRemote(Remote):
     def stat(self, path):
         lpath = self._lpath(path)
 
-        if not os.path.exists(lpath):
+        try:
+            return os.stat(lpath)
+        except FileNotFoundError:
             return None
-
-        return os.stat(lpath)
 
     def symlink(self, target, path):
         return os.symlink(target, self._lpath(path))

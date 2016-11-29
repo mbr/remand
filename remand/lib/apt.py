@@ -327,9 +327,10 @@ def dpkg_install(paths, check=True):
     with fs.remote_tmpdir() as rtmp:
         # upload packages to be installed
         pkg_files = []
-        for key in missing:
-            fs.upload_file(pkgs[key])
-            pkg_files.append(remote.path.join(rtmp, pkgs[key]))
+        for idx, key in enumerate(missing):
+            tmpdest = remote.path.join(rtmp, str(idx) + '.deb')
+            fs.upload_file(pkgs[key], tmpdest)
+            pkg_files.append(tmpdest)
 
         # install in a single dpkg install line
         # FIXME: add debconf default and such (same as apt)

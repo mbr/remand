@@ -6,6 +6,7 @@ from remand.operation import operation, Changed, Unchanged
 from remand.lib import fs, proc
 
 UNIT_EXTS = ('.target', '.service', '.socket', '.timer')
+NETWORK_EXTS = ('.network', '.netdev', '.link')
 
 
 # FIXME: should be info?
@@ -84,6 +85,26 @@ def install_unit_file(unit_file, reload=True):
     return Unchanged(msg='{} already installed'.format(remote_unit))
 
 
+@operation()
+def install_network(network_file, reload=True):
+    base, ext = os.path.splitext(network_file)
+
+    if ext not in NETWORK_EXTS:
+        raise ValueError('network_file should be one of {}'.format(
+            NETWORK_EXTS))
+
+    remote_network = os.path.join(config['systemd_network_dir'],
+                                  os.path.basename(network_file))
+
+    if fs.upload_file(network_file, remote_network).changed:
+        if reload:
+            daemon_reload()
+        return Changed(msg='Installed {}'.format(remote_network))
+
+    return Unchanged(msg='{} already installed'.format(remote_network))
+
+
+# FIXME: rethink names, might need a simple "enable" function here
 @operation()
 def enable_unit(unit_name, check_first=False):
     if check_first:

@@ -86,7 +86,7 @@ def install_unit_file(unit_file, reload=True):
 
 
 @operation()
-def install_network(network_file, reload=True):
+def install_network_file(network_file, reload=True):
     base, ext = os.path.splitext(network_file)
 
     if ext not in NETWORK_EXTS:

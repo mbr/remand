@@ -24,8 +24,13 @@ class LocalRemote(Remote):
     def lstat(self, path):
         try:
             return os.lstat(path)
-        except FileNotFoundError:
+        except OSError as e:
+            if e.errno != 2:
+                raise
             return None
+        # Python3:
+        # except FileNotFoundError:
+        #    return None
 
     mkdir = os.mkdir
     normalize = lambda path: os.path.abspath(os.path.realpath(path))
@@ -37,8 +42,13 @@ class LocalRemote(Remote):
     def stat(self, path):
         try:
             return os.stat(path)
-        except FileNotFoundError:
+        except OSError as e:
+            if e.errno != 2:
+                raise
             return None
+        # Python3:
+        # except FileNotFoundError:
+        #    return None
 
     symlink = os.symlink
     umask = os.umask

@@ -111,8 +111,13 @@ class ChrootRemote(Remote):
 
         try:
             return os.lstat(lpath)
-        except FileNotFoundError:
+        except OSError as e:
+            if e.errno != 2:
+                raise
             return None
+        # Python3:
+        # except FileNotFoundError:
+        #    return None
 
     def mkdir(self, path, mode=None):
         return os.mkdir(self._lpath(path), mode)
@@ -168,8 +173,13 @@ class ChrootRemote(Remote):
 
         try:
             return os.stat(lpath)
-        except FileNotFoundError:
+        except OSError as e:
+            if e.errno != 2:
+                raise
             return None
+        # Python3:
+        # except FileNotFoundError:
+        #    return None
 
     def symlink(self, target, path):
         return os.symlink(target, self._lpath(path))

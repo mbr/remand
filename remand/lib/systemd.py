@@ -132,7 +132,8 @@ def disable_unit(unit_name):
 @operation()
 def start_unit(unit_name):
     state = get_unit_state(unit_name)
-    if state['ActiveState'] == 'active' and state['SubState'] == 'running':
+    if 'ActiveState' in state and state['ActiveState'] == 'active' and state[
+            'SubState'] == 'running':
         return Unchanged(msg='{} already running'.format(unit_name))
 
     proc.run([config['cmd_systemctl'], 'start', unit_name])

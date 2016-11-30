@@ -1,1 +1,1 @@
-recursive-include remand/ *
+recursive-include remand *

@@ -5,7 +5,7 @@ from remand import config
 from remand.operation import operation, Changed, Unchanged
 from remand.lib import fs, proc
 
-UNIT_EXTS = ('.target', '.service', '.socket', '.timer')
+UNIT_EXTS = ('.target', '.service', '.socket', '.timer', '.mount')
 NETWORK_EXTS = ('.network', '.netdev', '.link')
 
 

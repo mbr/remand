@@ -45,13 +45,19 @@ APP_NAME = 'remand'
               multiple=True,
               help='Additional search paths for pkgs')
 @click.option('configfiles',
-              '--config',
+              '--configfile',
               '-c',
               multiple=True,
               type=click.Path(),
               help='Additional configuration files to read')
+@click.option('confvars',
+              '--config',
+              '-C',
+              multiple=True,
+              type=click.Tuple((str, str)),
+              help='Set configuration values directly')
 @click.pass_context
-def cli(context, pkg_path, configfiles, debug):
+def cli(context, pkg_path, configfiles, debug, confvars):
     pkg_path = list(pkg_path)
     if 'REMAND_PKG_PATH' in os.environ:
         pkg_path.extend(os.environ['REMAND_PKG_PATH'].split(os.pathsep))
@@ -75,6 +81,12 @@ def cli(context, pkg_path, configfiles, debug):
 
     # read configuration and host registry
     obj['config'] = load_configuration(APP_NAME, configfiles)
+
+    # set configuration values
+    for k, v in confvars:
+        obj['config']['Match:.*'][k] = v
+        log.debug('Set Match.*:[{!r}] = {!r}'.format(k, v))
+
     obj['hosts'] = HostRegistry(obj['config'])
 
     plugin_source = plugin_base.make_plugin_source(

@@ -103,7 +103,7 @@ class CollectThread(threading.Thread):
             self.input_source.close()
 
 
-def write_all(dest, input, bufsize):
+def write_all(dest, input, bufsize=4096):
     if hasattr(input, 'read'):
         for chunk in iter(partial(input.read, bufsize), ''):
             dest.write(chunk)

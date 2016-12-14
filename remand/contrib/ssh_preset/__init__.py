@@ -21,6 +21,7 @@ def install_strict_ssh(allow_users=['root'],
                        tunnel=False,
                        port=22,
                        use_dns=False,
+                       print_motd=False,
                        auto_restart=True,
                        check_sshd_config=True):
     # FIXME: change default in jinja templates to strict reporting of missing
@@ -39,7 +40,8 @@ def install_strict_ssh(allow_users=['root'],
                                       tcp_forwarding=tcp_forwarding,
                                       unix_forwarding=unix_forwarding,
                                       tunnel=tunnel,
-                                      port=port)
+                                      port=port,
+                                      print_motd=print_motd)
 
     if fs.upload_string(tpl, '/etc/ssh/sshd_config').changed:
         if check_sshd_config:

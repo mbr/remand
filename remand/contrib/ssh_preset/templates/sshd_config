@@ -39,7 +39,7 @@ StrictModes yes
 UsePrivilegeSeparation yes
 
 # usually, this at best leaks information
-PrintMotd no
+PrintMotd {{'yes' if print_motd else 'no'}}
 
 # Accept locale-related environment variables
 AcceptEnv LANG LC_CTYPE LC_NUMERIC LC_TIME LC_COLLATE LC_MONETARY LC_MESSAGES

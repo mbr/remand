@@ -198,8 +198,8 @@ url={url}
 #        offering -o and -O
 
 
-@cli.command(help='Downloads a file and generates embedding code')
-@click.argument('url')
+@cli.command(help='Downloads files and generates embedding code')
+@click.argument('urls', nargs=-1)
 @click.option('--save', '-O', is_flag=True)
 @click.option('--output', '-o', type=click.Path(), default=None)
 @click.option('--hashfunc', default='sha256')
@@ -208,49 +208,52 @@ url={url}
               '-f',
               type=click.Choice(['none', 'py', 'ini']),
               default='ini')
-def download_file(url, output, hashfunc, project, save, fmt):
-    u = urlparse(url)
+def download_file(urls, output, hashfunc, project, save, fmt):
+    param_output = output
 
-    if output:
-        save = True
+    for url in urls:
+        output = param_output
+        u = urlparse(url)
 
-    if not output:
-        output = u.path.rsplit('/', 1)[-1]
+        if output:
+            save = True
 
-    h = getattr(hashlib, hashfunc)()
-    print url
-    fn = os.path.basename(output)
+        if not output:
+            output = u.path.rsplit('/', 1)[-1]
 
-    r = requests.get(url, stream=True)
-    r.raise_for_status()
+        h = getattr(hashlib, hashfunc)()
+        fn = os.path.basename(output)
 
-    out = None
-    if save:
-        out = open(output, 'wb')
+        r = requests.get(url, stream=True)
+        r.raise_for_status()
 
-    try:
-        for chunk in r.iter_content(4096):
-            h.update(chunk)
+        out = None
+        if save:
+            out = open(output, 'wb')
+
+        try:
+            for chunk in r.iter_content(4096):
+                h.update(chunk)
+                if out:
+                    out.write(chunk)
+        finally:
             if out:
-                out.write(chunk)
-    finally:
-        if out:
-            out.close()
+                out.close()
 
-    log.info('Downloading {} to {}...'.format(url, output))
-    # FIXME: wrap requests here or write generic download widget that can
-    #        display a progressbar for all kinds of downloads
+        log.info('Downloading {} to {}...'.format(url, output))
+        # FIXME: wrap requests here or write generic download widget that can
+        #        display a progressbar for all kinds of downloads
 
-    if fmt == 'py':
-        tpl = FILE_PY_TPL
-    elif fmt == 'ini':
-        tpl = FILE_INI_TPL
-    else:
-        tpl = None
+        if fmt == 'py':
+            tpl = FILE_PY_TPL
+        elif fmt == 'ini':
+            tpl = FILE_INI_TPL
+        else:
+            tpl = None
 
-    if tpl:
-        click.echo(tpl.format(fn=fn,
-                              url=url,
-                              hashfunc=hashfunc,
-                              hexdigest=h.hexdigest(),
-                              project=project))
+        if tpl:
+            click.echo(tpl.format(fn=fn,
+                                  url=url,
+                                  hashfunc=hashfunc,
+                                  hexdigest=h.hexdigest(),
+                                  project=project))

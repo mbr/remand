@@ -282,7 +282,6 @@ def auto_remove(max_age=3600):
 
 @operation()
 def dpkg_install(paths, check=True):
-    pkgs = paths
     if not hasattr(paths, 'keys'):
         pkgs = {}
 

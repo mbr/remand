@@ -151,8 +151,12 @@ def stop_unit(unit_name):
 
 
 @operation()
-def restart_unit(unit_name):
-    proc.run([config['cmd_systemctl'], 'restart', unit_name])
+def restart_unit(unit_name, only_if_running=False):
+    if only_if_running:
+        cmd = 'try-restart'
+    else:
+        cmd = 'restart'
+    proc.run([config['cmd_systemctl'], cmd, unit_name])
     return Changed(msg='Restarted {}'.format(unit_name))
 
 

@@ -90,8 +90,8 @@ def install_network_file(network_file, reload=True):
     base, ext = os.path.splitext(network_file)
 
     if ext not in NETWORK_EXTS:
-        raise ValueError('network_file should be one of {}'.format(
-            NETWORK_EXTS))
+        raise ValueError(
+            'network_file should be one of {}'.format(NETWORK_EXTS))
 
     remote_network = os.path.join(config['systemd_network_dir'],
                                   os.path.basename(network_file))

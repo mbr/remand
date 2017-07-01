@@ -29,21 +29,22 @@ def install_strict_ssh(allow_users=['root'],
     #        values to avoid creating broken ssh configs
     # FIXME: add (possibly generic) support for atomic-tested-configuration
     #        swaps (i.e. run sshd -t on a config)
-    tpl = ssh_preset.templates.render('sshd_config',
-                                      allow_users=allow_users,
-                                      allow_groups=allow_groups,
-                                      address_family=address_family,
-                                      permit_root=permit_root,
-                                      modern_ciphers=modern_ciphers,
-                                      sftp_enabled=sftp_enabled,
-                                      agent_forwarding=agent_forwarding,
-                                      x11=x11,
-                                      tcp_forwarding=tcp_forwarding,
-                                      unix_forwarding=unix_forwarding,
-                                      tunnel=tunnel,
-                                      port=port,
-                                      print_motd=print_motd,
-                                      password_enabled=password_enabled)
+    tpl = ssh_preset.templates.render(
+        'sshd_config',
+        allow_users=allow_users,
+        allow_groups=allow_groups,
+        address_family=address_family,
+        permit_root=permit_root,
+        modern_ciphers=modern_ciphers,
+        sftp_enabled=sftp_enabled,
+        agent_forwarding=agent_forwarding,
+        x11=x11,
+        tcp_forwarding=tcp_forwarding,
+        unix_forwarding=unix_forwarding,
+        tunnel=tunnel,
+        ports=port if isinstance(port, list) else [port],
+        print_motd=print_motd,
+        password_enabled=password_enabled)
 
     if fs.upload_string(tpl, '/etc/ssh/sshd_config').changed:
         if check_sshd_config:

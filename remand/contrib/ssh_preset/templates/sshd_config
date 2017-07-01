@@ -1,4 +1,6 @@
+{% for port in ports -%}
 Port {{port}}
+{% endfor %}
 UseDNS {{'yes' if use_dns else 'no'}}
 
 

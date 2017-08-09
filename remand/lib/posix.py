@@ -163,8 +163,8 @@ def useradd(name,
         if not user_group:
             cmd.extend(('-g', gs.pop(0)))
 
-        for g in gs:
-            cmd.extend(('-G', g))
+    if gs:
+        cmd.extend(('-G', ','.join(groups)))
 
     if user_group is True:
         cmd.append('-U')

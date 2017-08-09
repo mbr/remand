@@ -42,8 +42,8 @@ def info_users():
 
     for line in remote.file('/etc/passwd', 'r'):
         u = PasswdEntry(*line.split(':'))
-        users[u.name] = PasswdEntry(u[0], u[1], int(u[2]), int(u[3]), u[4],
-                                    u[5], u[6])
+        users[u.name] = PasswdEntry(u[0], u[1],
+                                    int(u[2]), int(u[3]), u[4], u[5], u[6])
 
     return users
 
@@ -190,9 +190,8 @@ def useradd(name,
 
     cmd.append(name)
 
-    stdout, stderr, returncode = proc.run(cmd,
-                                          status_ok=(0, 9),
-                                          status_meaning=_USERADD_STATUS_CODES)
+    stdout, stderr, returncode = proc.run(
+        cmd, status_ok=(0, 9), status_meaning=_USERADD_STATUS_CODES)
 
     if returncode == 9:
         # FIXME: should check if user is up-to-date (home, etc)
@@ -214,9 +213,8 @@ def userdel(name, remove_home=False, force=False):
 
     cmd.append(name)
 
-    stdout, stderr, returncode = proc.run(cmd,
-                                          status_ok=(0, 6),
-                                          status_meaning=_USERDEL_STATUS_CODES)
+    stdout, stderr, returncode = proc.run(
+        cmd, status_ok=(0, 6), status_meaning=_USERDEL_STATUS_CODES)
 
     if returncode == 6:
         return Unchanged(msg='User {} does not exist'.format(name))
@@ -225,15 +223,17 @@ def userdel(name, remove_home=False, force=False):
     return Changed(msg='Removed user {}'.format(name))
 
 
-ShadowEntryBase = namedtuple('ShadowEntryBase', ['name',
-                                                 'password_encrypted',
-                                                 'last_change',
-                                                 'min_age',
-                                                 'max_age',
-                                                 'warn_period',
-                                                 'inact_period',
-                                                 'expires',
-                                                 'reserved', ])
+ShadowEntryBase = namedtuple('ShadowEntryBase', [
+    'name',
+    'password_encrypted',
+    'last_change',
+    'min_age',
+    'max_age',
+    'warn_period',
+    'inact_period',
+    'expires',
+    'reserved',
+])
 
 
 class ShadowEntry(ShadowEntryBase):

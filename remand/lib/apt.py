@@ -102,8 +102,8 @@ def info_dpkg_architecture():
 
 @memoize()
 def info_dpkg_foreign_architectures():
-    stdout, _, _ = proc.run([config['cmd_dpkg'],
-                             '--print-foreign-architectures'])
+    stdout, _, _ = proc.run(
+        [config['cmd_dpkg'], '--print-foreign-architectures'])
     return stdout.splitlines()
 
 
@@ -139,8 +139,7 @@ def add_apt_keys(key_filename, fingerprints=None):
         # first, we need to list all keys in the keyfile.
         # FIXME: allow use of remote gpg
         output = subprocess.check_output(
-            ['gpg', '--with-fingerprint'],
-            stdin=open(key_filename, 'r'))
+            ['gpg', '--with-fingerprint'], stdin=open(key_filename, 'r'))
 
         # FIXME: is utf8 the right call here?
         fingerprints = get_fingerprints(output.decode('utf8'))
@@ -154,11 +153,11 @@ def add_apt_keys(key_filename, fingerprints=None):
         with open(key_filename, 'r') as k:
             proc.run(['apt-key', 'add', '-'], input=k)
 
-        return Changed(msg='Added missing apt keys: {}'.format(', '.join(
-            id_from_fingerprint(fp) for fp in sorted(missing_fps))))
+        return Changed(msg='Added missing apt keys: {}'.format(
+            ', '.join(id_from_fingerprint(fp) for fp in sorted(missing_fps))))
 
-    return Unchanged(msg='Apt keys {} already installed'.format(', '.join(
-        id_from_fingerprint(fp) for fp in sorted(local_fps))))
+    return Unchanged(msg='Apt keys {} already installed'.format(
+        ', '.join(id_from_fingerprint(fp) for fp in sorted(local_fps))))
 
 
 @operation()
@@ -227,7 +226,10 @@ def install_packages(pkgs,
     if force:
         args.append('--force-yes')
     args.extend(pkgs)
-    proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
+    proc.run(
+        args, extra_env={
+            'DEBIAN_FRONTEND': 'noninteractive',
+        })
 
     # FIXME: make this a decorator for info, add "change_invalides" decorator?
     info_installed_packages.invalidate_cache()
@@ -238,8 +240,8 @@ def install_packages(pkgs,
 
 @operation()
 def remove_packages(pkgs, check_first=True, purge=False, max_age=3600):
-    if check_first and not set(pkgs).intersection(set(info_installed_packages(
-    ).keys())):
+    if check_first and not set(pkgs).intersection(
+            set(info_installed_packages().keys())):
         return Unchanged(msg='Not installed: {}'.format(' '.join(pkgs)))
 
     update(max_age)
@@ -254,7 +256,10 @@ def remove_packages(pkgs, check_first=True, purge=False, max_age=3600):
         # '--option', 'Dpkg::Options::="--force-confold"'
     ])
     args.extend(pkgs)
-    proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
+    proc.run(
+        args, extra_env={
+            'DEBIAN_FRONTEND': 'noninteractive',
+        })
 
     info_installed_packages.invalidate_cache()
 
@@ -268,9 +273,15 @@ def auto_remove(max_age=3600):
     #        with_config context manager
 
     args = [config['cmd_apt_get']]
-    args.extend(['autoremove', '--quiet', '--yes', ])
-    stdout, _, _ = proc.run(args,
-                            extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
+    args.extend([
+        'autoremove',
+        '--quiet',
+        '--yes',
+    ])
+    stdout, _, _ = proc.run(
+        args, extra_env={
+            'DEBIAN_FRONTEND': 'noninteractive',
+        })
 
     if '0 to remove' in stdout:
         return Unchanged(msg='No packages auto-removed')
@@ -309,8 +320,7 @@ def dpkg_install(paths, check=True):
         installed = info_installed_packages()
 
         for name, version in pkgs:
-            if name not in installed or not installed[name].eq_version(
-                    version):
+            if name not in installed or not installed[name].eq_version(version):
                 missing.append((name, version))
     else:
         missing = pkgs.keys()
@@ -335,7 +345,10 @@ def dpkg_install(paths, check=True):
         # FIXME: add debconf default and such (same as apt)
         args = [config['cmd_dpkg'], '-i']
         args.extend(pkg_files)
-        proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
+        proc.run(
+            args, extra_env={
+                'DEBIAN_FRONTEND': 'noninteractive',
+            })
 
     return Changed(msg='Installed packages {!r}'.format(missing))
 
@@ -357,10 +370,11 @@ def dpkg_add_architecture(arch):
 
 @operation()
 def install_preference(path, name=None):
-    op = fs.upload_file(path,
-                        remote.path.join(config['apt_preferences_d'], name or
-                                         os.path.basename(path)),
-                        create_parent=True)
+    op = fs.upload_file(
+        path,
+        remote.path.join(config['apt_preferences_d'], name
+                         or os.path.basename(path)),
+        create_parent=True)
 
     if op.changed:
         info_update_timestamp().mark_stale()
@@ -374,15 +388,15 @@ def install_source_list(path, name=None, main=False):
         if name is not None:
             raise ValueError('Cannot provide name when uploading sources.list')
 
-        op = fs.upload_file(path,
-                            config['apt_sources_list'],
-                            create_parent=True)
+        op = fs.upload_file(
+            path, config['apt_sources_list'], create_parent=True)
 
     else:
-        op = fs.upload_file(path,
-                            remote.path.join(config['apt_sources_list_d'],
-                                             name or os.path.basename(path)),
-                            create_parent=True)
+        op = fs.upload_file(
+            path,
+            remote.path.join(config['apt_sources_list_d'], name
+                             or os.path.basename(path)),
+            create_parent=True)
 
     if op.changed:
         info_update_timestamp().mark_stale()
@@ -403,15 +417,16 @@ def add_repo(distribution,
     if arch:
         options = ' [ arch={} ]'.format(','.join(arch))
 
-    line = '{}{} {} {} {}\n'.format('deb-src' if src else 'deb',
-                                    options,
-                                    site,
-                                    distribution,
-                                    comps, )
+    line = '{}{} {} {} {}\n'.format(
+        'deb-src' if src else 'deb',
+        options,
+        site,
+        distribution,
+        comps, )
 
     if name is None:
-        name = '{}_{}{}'.format(distribution, '_'.join(components), '' if
-                                not src else '-sources')
+        name = '{}_{}{}'.format(distribution, '_'.join(components), ''
+                                if not src else '-sources')
 
     path = remote.path.join(config['apt_sources_list_d'], name + '.list')
     upload = fs.upload_string(line, path, create_parent=True)
@@ -440,7 +455,10 @@ def upgrade(max_age=3600, force=False, dist_upgrade=False):
     ])
     if force:
         args.append('--force-yes')
-    proc.run(args, extra_env={'DEBIAN_FRONTEND': 'noninteractive', })
+    proc.run(
+        args, extra_env={
+            'DEBIAN_FRONTEND': 'noninteractive',
+        })
 
     info_installed_packages.invalidate_cache()
 

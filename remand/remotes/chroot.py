@@ -72,9 +72,8 @@ class ChrootRemote(Remote):
 
         # security check: ensure we're not accidentally leaving the chroot
         if not _is_subpath(lpath, self.root, follow_symlink=follow_symlink):
-            raise ChrootViolation(
-                "Path {} violates chroot of {} [cwd: {}]".format(
-                    path, self.root, self._cwd))
+            raise ChrootViolation("Path {} violates chroot of {} [cwd: {}]".
+                                  format(path, self.root, self._cwd))
 
         return lpath
 
@@ -82,8 +81,8 @@ class ChrootRemote(Remote):
         """Convert a path from local filesystem to chroot path. Will raise
         :class:`.ChrootViolation` if `lpath` is outside the chroot."""
         if not _is_subpath(lpath, self.root):
-            raise ChrootViolation("Not in {} chroot: {}".format(self.root,
-                                                                lpath))
+            raise ChrootViolation(
+                "Not in {} chroot: {}".format(self.root, lpath))
         rpath = self.path.abspath()
 
     def getcwd(self):
@@ -136,12 +135,13 @@ class ChrootRemote(Remote):
         ch_args = ['chroot', self.root]
         ch_args.extend(args)
 
-        proc = subprocess.Popen(ch_args,
-                                cwd=cwd or self.getcwd(),
-                                env=env,
-                                stdin=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                stdout=subprocess.PIPE)
+        proc = subprocess.Popen(
+            ch_args,
+            cwd=cwd or self.getcwd(),
+            env=env,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE)
 
         # FIXME: copied from LocalRemote; both need replacement
         orig_communicate = proc.communicate

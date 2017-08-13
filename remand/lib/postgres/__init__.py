@@ -44,11 +44,12 @@ class PostgreSQL(object):
                 stack.enter_context(proc.sudo(self.ident))
 
             stack.enter_context(net.local_forward(self.remote_addr, sock_addr))
-            url = URL(drivername='postgresql',
-                      username=self.user,
-                      password=self.password,
-                      database=self.database,
-                      query={'host': dtmp})
+            url = URL(
+                drivername='postgresql',
+                username=self.user,
+                password=self.password,
+                database=self.database,
+                query={'host': dtmp})
 
             engine = create_engine(url, echo=self.echo)
             yield Manager(engine)
@@ -89,8 +90,8 @@ class Manager(object):
             return Unchanged('Database {} already exists'.format(name))
 
         sql = text(' '.join([
-            'CREATE DATABASE ' + pg_valid(name), 'WITH OWNER ' + pg_valid(
-                owner)
+            'CREATE DATABASE ' + pg_valid(name), 'WITH OWNER ' +
+            pg_valid(owner)
         ]))
 
         # runs outside transaction
@@ -129,9 +130,7 @@ class Manager(object):
                 'PASSWORD :pw' if password is not None else 'NOPASSWORD',
             ]))
 
-            sess.connection().execute(sql,
-                                      name=name,
-                                      connection_limit=connection_limit,
-                                      pw=password)
+            sess.connection().execute(
+                sql, name=name, connection_limit=connection_limit, pw=password)
 
         return Changed(msg='Created role {}'.format(name))

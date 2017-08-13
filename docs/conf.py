@@ -20,6 +20,8 @@ html_theme = 'better'
 html_static_path = ['_static']
 
 html_use_smartypants = True
-html_sidebars = {'**': ['globaltoc.html', 'relations.html'], }
+html_sidebars = {
+    '**': ['globaltoc.html', 'relations.html'],
+}
 htmlhelp_basename = 'remanddoc'
 intersphinx_mapping = {'http://docs.python.org/': None}

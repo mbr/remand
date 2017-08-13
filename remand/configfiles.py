@@ -20,8 +20,7 @@ def load_configuration(app_name, configfiles=[]):
     :param configfiles: Additional configuration files to read.
     """
     fns = [
-        os.path.join(
-            os.path.dirname(__file__), 'defaults.cfg'),
+        os.path.join(os.path.dirname(__file__), 'defaults.cfg'),
         os.path.join(app_dirs.user_config_dir, 'config.ini'),
     ]
 
@@ -57,9 +56,9 @@ class HostRegistry(object):
             self.host_res.append((re.compile(pattern + '$'), sect))
 
     def get_config_for_host(self, hostname):
-        matching_sects = [sect
-                          for exp, sect in self.host_res
-                          if exp.match(hostname)]
+        matching_sects = [
+            sect for exp, sect in self.host_res if exp.match(hostname)
+        ]
 
         # use sections in reverse so that sections further down overwrite
         # those defined earlier

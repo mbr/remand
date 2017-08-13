@@ -59,12 +59,13 @@ class LocalRemote(Remote):
         env = {}
         env.update(os.environ)
         env.update(extra_env)
-        proc = subprocess.Popen(args,
-                                cwd=cwd,
-                                env=env,
-                                stdin=subprocess.PIPE,
-                                stderr=subprocess.PIPE,
-                                stdout=subprocess.PIPE)
+        proc = subprocess.Popen(
+            args,
+            cwd=cwd,
+            env=env,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            stdout=subprocess.PIPE)
 
         orig_communicate = proc.communicate
 

@@ -39,8 +39,8 @@ def info_openssh_version():
 
 def get_authorized_keys_file(user):
     u = info['posix.users'][user]
-    ak_file = config['ssh_authorized_keys_file'].format(name=u.name,
-                                                        home=u.home)
+    ak_file = config['ssh_authorized_keys_file'].format(
+        name=u.name, home=u.home)
     log.debug('Authorized key file for {}: {}'.format(u.name, ak_file))
     return ak_file
 
@@ -68,11 +68,11 @@ def set_authorized_keys(files, user='root', fix_permissions=True):
     fps = ', '.join(k.readable_fingerprint for k in kf.keys)
 
     if upload.changed:
-        return Changed(
-            msg='SSH authorized keys for {} set to: {}'.format(user, fps))
+        return Changed(msg='SSH authorized keys for {} set to: {}'.format(
+            user, fps))
 
-    return Unchanged(
-        msg='SSH authorized keys for {} unchanged ({})'.format(user, fps))
+    return Unchanged(msg='SSH authorized keys for {} unchanged ({})'.format(
+        user, fps))
 
 
 @operation()
@@ -99,11 +99,10 @@ def init_authorized_keys(user='root', fix_permissions=True):
     # ensured they exist. however, they might still be owned by root
 
     if changed:
-        return Changed(ak_file,
-                       msg='Changed permissions or owner on authorized keys')
+        return Changed(
+            ak_file, msg='Changed permissions or owner on authorized keys')
     return Unchanged(
-        ak_file,
-        msg='authorized keys file has correct owner and permissions')
+        ak_file, msg='authorized keys file has correct owner and permissions')
 
 
 @operation()
@@ -144,10 +143,10 @@ def regenerate_host_keys(mark='/etc/ssh/host_keys_regenerated'):
     # mark host keys as new
     fs.touch(mark)
 
-    return Changed(
-        msg='Regenerated SSH host keys.\n'
-        'Old fingerprints:\n{}\nNew fingerprints:\n{}\n'.format(
-            util.indent('    ', old_fps), util.indent('    ', new_fps)))
+    return Changed(msg='Regenerated SSH host keys.\n'
+                   'Old fingerprints:\n{}\nNew fingerprints:\n{}\n'.format(
+                       util.indent('    ', old_fps),
+                       util.indent('    ', new_fps)))
 
 
 @operation()
@@ -184,8 +183,7 @@ def install_private_key(key_file,
     # blocked: SSH transport does not suppoort
     # with remote.umasked(0o777 - KEY_FILE_PERMS):
     changed |= fs.create_dir(
-        remote.path.dirname(target_path),
-        mode=AK_DIR_PERMS).changed
+        remote.path.dirname(target_path), mode=AK_DIR_PERMS).changed
 
     changed |= fs.upload_file(key_file, target_path).changed
     changed |= fs.chmod(target_path, mode=KEY_FILE_PERMS).changed

@@ -26,15 +26,15 @@ def install_cert(cert, key, cert_name=None, key_name=None):
     cert_dir_st = remote.lstat(cert_dir)
 
     if not cert_dir_st:
-        raise ConfigurationError('Remote SSL dir {} does not exist'.format(
-            cert_dir))
+        raise ConfigurationError(
+            'Remote SSL dir {} does not exist'.format(cert_dir))
 
     key_dir = config['sslcert_key_dir']
     key_dir_st = remote.lstat(key_dir)
 
     if not key_dir_st:
-        raise ConfigurationError('Remote key dir {} does not exist'.format(
-            key_dir))
+        raise ConfigurationError(
+            'Remote key dir {} does not exist'.format(key_dir))
 
     SECURE_MODES = (0o700, 0o710)
     actual_mode = key_dir_st.st_mode & 0o777
@@ -57,8 +57,8 @@ def install_cert(cert, key, cert_name=None, key_name=None):
     changed |= fs.chmod(key_rpath, 0o600).changed
 
     if changed:
-        return Changed(
-            msg='Uploaded key pair {}/{}'.format(cert_name, key_name))
+        return Changed(msg='Uploaded key pair {}/{}'.format(
+            cert_name, key_name))
 
-    return Unchanged(
-        msg='Key pair {}/{} already uploaded'.format(cert_name, key_name))
+    return Unchanged(msg='Key pair {}/{} already uploaded'.format(
+        cert_name, key_name))

@@ -36,8 +36,8 @@ def _expand_remote_dest(local_path, remote_path):
         # dir-expansion, since st is guaranteed not be a link
         if st and S_ISDIR(st.st_mode):
             if local_path is None:
-                raise RemoteFailureError('Is a directory: {}'.format(
-                    remote_path))
+                raise RemoteFailureError(
+                    'Is a directory: {}'.format(remote_path))
 
             # if it's a directory, correct path
             remote_path = remote.path.join(remote_path,
@@ -48,8 +48,8 @@ def _expand_remote_dest(local_path, remote_path):
 
     # ensure st is either non-existant, or a regular file
     if st and not S_ISREG(st.st_mode):
-        raise RemoteFailureError('Not a regular file: {!r}'.format(
-            remote_path))
+        raise RemoteFailureError(
+            'Not a regular file: {!r}'.format(remote_path))
     return st, remote_path
 
 
@@ -79,11 +79,11 @@ def chown(remote_path, uid=None, gid=None, recursive=False):
     stdout, _, _ = proc.run(cmd)
 
     if stdout.strip():
-        return Changed(msg='Changed ownership of {} to {}'
-                       .format(remote_path, new_owner))
+        return Changed(msg='Changed ownership of {} to {}'.format(
+            remote_path, new_owner))
 
-    return Unchanged(msg='Ownership of {} already {}'
-                     .format(remote_path, new_owner))
+    return Unchanged(msg='Ownership of {} already {}'.format(
+        remote_path, new_owner))
 
 
 @operation()
@@ -102,8 +102,8 @@ def chmod(remote_path, mode, recursive=False, executable=False):
 
     # if the target is a directory or already has at least one executable bit,
     # we apply the executable mode (see chmod manpage for details)
-    correct_mode = (xmode if S_ISDIR(st.st_mode) or actual_mode & 0o111 else
-                    mode)
+    correct_mode = (xmode
+                    if S_ISDIR(st.st_mode) or actual_mode & 0o111 else mode)
 
     if actual_mode != correct_mode:
         remote.chmod(remote_path, correct_mode)
@@ -116,8 +116,8 @@ def chmod(remote_path, mode, recursive=False, executable=False):
                 executable).changed
 
     if changed:
-        return Changed(
-            msg='Changed mode of {} to {:o}'.format(remote_path, mode))
+        return Changed(msg='Changed mode of {} to {:o}'.format(
+            remote_path, mode))
 
     return Unchanged(msg='Mode of {} already {:o}'.format(remote_path, mode))
 
@@ -259,8 +259,8 @@ def symlink(src, dst):
         # atomically
         remote.unlink(dst)
         remote.symlink(src, dst)
-        return Changed(msg='Changed link: {} -> {} (previously -> {})'
-                       .format(dst, src, rsrc))
+        return Changed(msg='Changed link: {} -> {} (previously -> {})'.format(
+            dst, src, rsrc))
 
     remote.symlink(src, dst)
     return Changed(msg='Created link: {} -> {}'.format(dst, src))
@@ -322,8 +322,8 @@ def upload_file(local_path,
     uploader = Uploader._by_short_name(config['fs_remote_file_upload'])()
 
     if lst is None:
-        raise ConfigurationError('Local file {!r} does not exist'.format(
-            local_path))
+        raise ConfigurationError(
+            'Local file {!r} does not exist'.format(local_path))
 
     if S_ISLNK(lst.st_mode):
         # local file is a link
@@ -400,16 +400,15 @@ def upload_tree(local_path, remote_path):
             local_fn = os.path.join(dirpath, fn)
             remote_fn = remote.path.join(rem, fn)
 
-            changed |= upload_file(local_fn,
-                                   remote_fn,
-                                   follow_symlink=False).changed
+            changed |= upload_file(
+                local_fn, remote_fn, follow_symlink=False).changed
 
     if changed:
-        return Changed(
-            msg='Uploaded tree {} => {}'.format(local_path, remote_path))
+        return Changed(msg='Uploaded tree {} => {}'.format(
+            local_path, remote_path))
 
-    return Unchanged(
-        msg='Tree already uploaded: {} => {}'.format(local_path, remote_path))
+    return Unchanged(msg='Tree already uploaded: {} => {}'.format(
+        local_path, remote_path))
 
 
 def walk(top, topdown=True, onerror=None, followlinks=False):

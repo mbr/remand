@@ -78,8 +78,8 @@ def local_forward(remote_addr, local_addr=('127.0.0.1', 0)):
             if not local_addr:
                 dtmp = stack.enter_context(volatile.dir())
                 local_addr = os.path.join(dtmp, 'remote.sock')
-            server = SocketServer.ThreadingUnixStreamServer(local_addr,
-                                                            Handler)
+            server = SocketServer.ThreadingUnixStreamServer(
+                local_addr, Handler)
 
         server.allow_reuse_address = False
         server.daemon_threads = True

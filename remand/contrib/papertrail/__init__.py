@@ -15,8 +15,7 @@ def setup_rsyslog(server_addr):
     changed |= fs.upload_file(papertrail.files['papertrail-bundle.pem'],
                               '/etc/papertrail-bundle.pem').changed
     changed |= fs.upload_string(
-        papertrail.templates.render('papertrail.conf',
-                                    addr=server_addr),
+        papertrail.templates.render('papertrail.conf', addr=server_addr),
         '/etc/rsyslog.d/papertrail.conf', ).changed
 
     if changed:

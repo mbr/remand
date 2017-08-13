@@ -10,13 +10,11 @@ class Uploader(RegistryBase):
 
     def upload_file(self, local_path, remote_path):
         raise ConfigurationError('{} does not support file uploads.'.format(
-            self.__class__.__name__
-        ))
+            self.__class__.__name__))
 
     def upload_buffer(self, buf, remote_path):
         raise ConfigurationError('{} does not support buffer uploads.'.format(
-            self.__class__.__name__
-        ))
+            self.__class__.__name__))
 
 
 @Uploader._registered

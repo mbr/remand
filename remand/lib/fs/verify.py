@@ -12,12 +12,12 @@ class Verifier(RegistryBase):
     registry = {}
 
     def verify_file(self, st, local_path, remote_path):
-        raise ConfigurationError('{} does not verify files.'.format(
-            self.__class__.__name__))
+        raise ConfigurationError(
+            '{} does not verify files.'.format(self.__class__.__name__))
 
     def verify_buffer(self, st, buf, remote_path):
-        raise ConfigurationError('{} does not verify buffers.'.format(
-            self.__class__.__name__))
+        raise ConfigurationError(
+            '{} does not verify buffers.'.format(self.__class__.__name__))
 
 
 @Verifier._registered

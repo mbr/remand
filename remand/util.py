@@ -71,6 +71,7 @@ def plural_n(word, times=2):
 def indent(prefix, s):
     return prefix + ('\n' + prefix).join(line for line in s.splitlines())
 
+
 # unused:
 # def set_non_blocking(f):
 #     if hasattr(f, 'fileno'):

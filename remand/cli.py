@@ -35,27 +35,28 @@ APP_NAME = 'remand'
 
 
 @click.group(help='Administer servers remotely')
-@click.option('--debug',
-              '-d',
-              help='Output more debugging information',
-              is_flag=True,
-              default=False)
-@click.option('--pkg-path',
-              '-L',
-              multiple=True,
-              help='Additional search paths for pkgs')
-@click.option('configfiles',
-              '--configfile',
-              '-c',
-              multiple=True,
-              type=click.Path(),
-              help='Additional configuration files to read')
-@click.option('confvars',
-              '--config',
-              '-C',
-              multiple=True,
-              type=click.Tuple((str, str)),
-              help='Set configuration values directly')
+@click.option(
+    '--debug',
+    '-d',
+    help='Output more debugging information',
+    is_flag=True,
+    default=False)
+@click.option(
+    '--pkg-path', '-L', multiple=True, help='Additional search paths for pkgs')
+@click.option(
+    'configfiles',
+    '--configfile',
+    '-c',
+    multiple=True,
+    type=click.Path(),
+    help='Additional configuration files to read')
+@click.option(
+    'confvars',
+    '--config',
+    '-C',
+    multiple=True,
+    type=click.Tuple((str, str)),
+    help='Set configuration values directly')
 @click.pass_context
 def cli(context, pkg_path, configfiles, debug, confvars):
     pkg_path = list(pkg_path)
@@ -72,8 +73,8 @@ def cli(context, pkg_path, configfiles, debug, confvars):
     plugin_base = pluginbase.PluginBase(package='remand.ext')
 
     obj = context.obj = {}
-    handler = ColorizedStderrHandler(
-        level=logbook.DEBUG if debug else logbook.INFO)
+    handler = ColorizedStderrHandler(level=logbook.DEBUG
+                                     if debug else logbook.INFO)
 
     # setup logging
     logbook.compat.redirect_logging()
@@ -137,8 +138,8 @@ def run(obj, plan, uris, objective):
 
                 transport_cls = all_transports.get(cfg['uri'].transport, None)
                 if not transport_cls:
-                    raise TransportError('Unknown transport: {}'.format(cfg[
-                        'uri']))
+                    raise TransportError(
+                        'Unknown transport: {}'.format(cfg['uri']))
 
                 log.notice('Executing {} on {}'.format(plan, cfg['uri']))
 
@@ -205,10 +206,8 @@ url={url}
 @click.option('--output', '-o', type=click.Path(), default=None)
 @click.option('--hashfunc', default='sha256')
 @click.option('--project', '-p', default='project')
-@click.option('--fmt',
-              '-f',
-              type=click.Choice(['none', 'py', 'ini']),
-              default='ini')
+@click.option(
+    '--fmt', '-f', type=click.Choice(['none', 'py', 'ini']), default='ini')
 def download_file(urls, output, hashfunc, project, save, fmt):
     param_output = output
 
@@ -253,8 +252,10 @@ def download_file(urls, output, hashfunc, project, save, fmt):
             tpl = None
 
         if tpl:
-            click.echo(tpl.format(fn=fn,
-                                  url=url,
-                                  hashfunc=hashfunc,
-                                  hexdigest=h.hexdigest(),
-                                  project=project))
+            click.echo(
+                tpl.format(
+                    fn=fn,
+                    url=url,
+                    hashfunc=hashfunc,
+                    hexdigest=h.hexdigest(),
+                    project=project))

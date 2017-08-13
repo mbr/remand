@@ -46,8 +46,8 @@ class WarnAutoAddPolicy(AutoAddPolicy):
     def missing_host_key(self, client, hostname, key):
         log.warning('Missing hostkey for {} ignored (fingerprint is {}).'
                     .format(hostname, format_key(key)))
-        return super(WarnAutoAddPolicy, self).missing_host_key(client,
-                                                               hostname, key)
+        return super(WarnAutoAddPolicy, self).missing_host_key(
+            client, hostname, key)
 
 
 class AskToAddPolicy(MissingHostKeyPolicy):
@@ -56,9 +56,11 @@ class AskToAddPolicy(MissingHostKeyPolicy):
     _USER_PROMPT = "Are you sure you want to continue connecting?"
 
     def missing_host_key(self, client, hostname, key):
-        click.echo(self._UNKNOWN_WARNING.format(hostname,
-                                                key.get_name(),
-                                                format_key(key), ))
+        click.echo(
+            self._UNKNOWN_WARNING.format(
+                hostname,
+                key.get_name(),
+                format_key(key), ))
         if not click.confirm(self._USER_PROMPT):
             raise TransportError('User declined to connect to unknown host')
 
@@ -75,8 +77,8 @@ class AskToSavePolicy(AskToAddPolicy):
 
         if client._host_keys_filename is not None:
             client.save_host_keys(client._host_keys_filename)
-            log.info('Added {} host key for {}: {}'.format(key.get_name(
-            ), hostname, format_key(key)))
+            log.info('Added {} host key for {}: {}'.format(
+                key.get_name(), hostname, format_key(key)))
         else:
             log.warning('Did not save host, no known_hosts file loaded.')
 
@@ -98,8 +100,8 @@ def wrap_ssh_errors(f):
         try:
             return f(*args, **kwargs)
         except SSHException, e:
-            raise TransportError('SSH ({}): {}'.format(
-                type(e).__name__, e.message))
+            raise TransportError(
+                'SSH ({}): {}'.format(type(e).__name__, e.message))
 
     return _
 
@@ -110,12 +112,13 @@ def wrap_sftp_errors(f):
         try:
             return f(*args, **kwargs)
         except IOError, e:
-            fargs = ', '.join(map(repr, args[1:]) + ['{}={!r}'.format(*v)
-                                                     for v in kwargs.items()])
+            fargs = ', '.join(
+                map(repr, args[1:]) +
+                ['{}={!r}'.format(*v) for v in kwargs.items()])
             if e.errno == 2:
                 raise RemoteFileDoesNotExistError(str(e))
-            raise RemoteFailureError('SFTP Failed {}({}): {}'.format(
-                f.__name__, fargs, str(e)))
+            raise RemoteFailureError(
+                'SFTP Failed {}({}): {}'.format(f.__name__, fargs, str(e)))
 
     return wrap_ssh_errors(_)
 
@@ -195,8 +198,8 @@ class SSHRemote(Remote):
 
         while True:
             if attempt == 0:
-                log.debug('First connection attempt to {}:{}'.format(uri.host,
-                                                                     port))
+                log.debug(
+                    'First connection attempt to {}:{}'.format(uri.host, port))
             try:
                 self._client.connect(
                     uri.host,
@@ -210,16 +213,17 @@ class SSHRemote(Remote):
                 break
             except BadHostKeyException, e:
                 raise TransportError(
-                    _BAD_KEY_ERROR.format(e.key.get_name(),
-                                          format_key(e.key),
-                                          e.expected_key.get_name(),
-                                          format_key(e.expected_key),
-                                          ssh_host_name(uri), ))
+                    _BAD_KEY_ERROR.format(
+                        e.key.get_name(),
+                        format_key(e.key),
+                        e.expected_key.get_name(),
+                        format_key(e.expected_key),
+                        ssh_host_name(uri), ))
             except (socket.timeout, NoValidConnectionsError) as e:
                 attempt += 1
 
-                msg = ('Connection to {}:{} failed {} out of {} times'
-                       .format(uri.host, port, attempt, max_attempts))
+                msg = ('Connection to {}:{} failed {} out of {} times'.format(
+                    uri.host, port, attempt, max_attempts))
                 log.warning(msg)
 
                 if attempt < max_attempts:
@@ -227,12 +231,12 @@ class SSHRemote(Remote):
                     time.sleep(delay)
                     continue
 
-                raise TransportError('Could not connect to {}:{}'.format(
-                    uri.host, port))
+                raise TransportError(
+                    'Could not connect to {}:{}'.format(uri.host, port))
             except SSHException, e:
                 if 'not found in known_hosts' in e.message:
-                    raise TransportError(_KNOWN_HOSTS_ERROR.format(
-                        ssh_host_name(uri)))
+                    raise TransportError(
+                        _KNOWN_HOSTS_ERROR.format(ssh_host_name(uri)))
                 if 'Private key file is encrypted' in e.message:
                     raise TransportError(_PRIVATE_KEY_ENCRYPTED)
                 raise
@@ -249,8 +253,8 @@ class SSHRemote(Remote):
         expected_umask = int(config['reset_umask'], 8)
         if not umask == int(config['reset_umask'], 8):
             log.warning('Host has unexpected umask of {:03o} (instead of '
-                        '{:03o}). Things might not work as you expect.'
-                        .format(umask, expected_umask))
+                        '{:03o}). Things might not work as you expect.'.format(
+                            umask, expected_umask))
 
         # verify time
         max_diff = config['max_time_diff']
@@ -342,8 +346,10 @@ class SSHRemote(Remote):
 
     @wrap_sftp_errors
     def popen(self, args, cwd=None, extra_env={}):
-        envvars = ['{}={}'.format(
-            shlex_quote(k), shlex_quote(v)) for k, v in extra_env.items()]
+        envvars = [
+            '{}={}'.format(shlex_quote(k), shlex_quote(v))
+            for k, v in extra_env.items()
+        ]
         chdir = ''
 
         if cwd is not None:
@@ -354,14 +360,15 @@ class SSHRemote(Remote):
 
         if timeout:
             timeout = int(timeout)
-        cmd = ' '.join([chdir] + envvars + [shlex_quote(part) for part in args
-                                            ])
+        cmd = ' '.join([chdir] + envvars +
+                       [shlex_quote(part) for part in args])
         log.debug('Executing {}'.format(cmd))
         stdin, stdout, stderr = self._client.exec_command(cmd, timeout=timeout)
 
-        return SSHRemoteProcess(stdin=_ShutdownWrap(stdin, 1),
-                                stdout=_ShutdownWrap(stdout, 0),
-                                stderr=_ShutdownWrap(stderr, 0), )
+        return SSHRemoteProcess(
+            stdin=_ShutdownWrap(stdin, 1),
+            stdout=_ShutdownWrap(stdout, 0),
+            stderr=_ShutdownWrap(stderr, 0), )
 
     @wrap_sftp_errors
     def rmdir(self, path):
@@ -384,10 +391,11 @@ class SSHRemote(Remote):
         # cannot log here, must be callable by other threads
 
         t = self._client._transport
-        chan = t.open_channel('direct-tcpip',
-                              dest_addr=addr,
-                              src_addr=('127.0.0.1', 0)  # not needed
-                              )
+        chan = t.open_channel(
+            'direct-tcpip',
+            dest_addr=addr,
+            src_addr=('127.0.0.1', 0)  # not needed
+        )
 
         if not chan:
             raise IOError('Could not open TCP tunnel to {}:{}'.format(*addr))

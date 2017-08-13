@@ -32,8 +32,8 @@ class InfoManager(object):
         func = getattr(mod, funcname, None)
 
         if func is None:
-            raise ConfigurationError('Missing callable {} in {}'.format(
-                funcname, modname))
+            raise ConfigurationError(
+                'Missing callable {} in {}'.format(funcname, modname))
 
         return func()
 

@@ -17,8 +17,8 @@ class RegistryBase(object):
                 .format(cls.__name__, short_name))
 
         subclass = cls.registry[short_name]
-        log.debug('{} {!r} -> {}'.format(
-            cls.__name__, short_name, subclass.__name__))
+        log.debug('{} {!r} -> {}'.format(cls.__name__, short_name,
+                                         subclass.__name__))
         return subclass
 
     def __str__(self):

@@ -136,8 +136,8 @@ class WebResourceHandler(ResourceHandlerMixin):
                 raise ValueError(
                     'Downloaded file {} has {} hashsum of {}, expected {}'
                     .format(url, hashtype, digest, hashsum))
-            log.debug('{}-hash ok for {}: {}'.format(hashtype, filename,
-                                                     hashsum))
+            log.debug(
+                '{}-hash ok for {}: {}'.format(hashtype, filename, hashsum))
 
         return filename
 
@@ -149,8 +149,8 @@ class WebResourceHandler(ResourceHandlerMixin):
 
 class TemplateResourceHandler(ResourceHandlerMixin):
     def __init__(self, plan, template_dir, attr_name=None):
-        super(TemplateResourceHandler, self).__init__(plan, attr_name or
-                                                      template_dir)
+        super(TemplateResourceHandler, self).__init__(plan, attr_name
+                                                      or template_dir)
         self.template_dir = template_dir
         self._jinja_env = None
 
@@ -161,8 +161,8 @@ class TemplateResourceHandler(ResourceHandlerMixin):
             if self.plan.resource_dir is None:
                 raise ValueError('jinja_env requested, but no resource_dir '
                                  'set')
-            self._jinja_env = Environment(loader=FileSystemLoader(os.path.join(
-                self.plan.resource_dir, 'templates')))
+            self._jinja_env = Environment(loader=FileSystemLoader(
+                os.path.join(self.plan.resource_dir, 'templates')))
 
             # add globals
             self._jinja_env.globals['config'] = config
@@ -256,9 +256,10 @@ class Plan(object):
         plan_id = str(uuid.uuid4()).replace('-', '')
         mod = imp.load_source('_remand_plan_' + plan_id, path)
 
-        candidates = [item
-                      for item in mod.__dict__.values()
-                      if isinstance(item, cls) and mod.__name__ == item.name]
+        candidates = [
+            item for item in mod.__dict__.values()
+            if isinstance(item, cls) and mod.__name__ == item.name
+        ]
 
         if not candidates:
             raise ValueError('Module {} does not include a solid plan'

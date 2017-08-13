@@ -24,8 +24,8 @@ class RemoteProcessFailedError(RemoteFailureError):
         return str(self)
 
     def __str__(self):
-        msg = 'Remote command "{}" exited ({})'.format(
-            ' '.join(shlex_quote(a) for a in self.args), self.returncode)
+        msg = 'Remote command "{}" exited ({})'.format(' '.join(
+            shlex_quote(a) for a in self.args), self.returncode)
 
         if self.meaning:
             msg += ': ' + self.meaning
@@ -62,11 +62,12 @@ def run(cmd,
         log.debug('stdout: {}'.format(stdout))
         log.debug('stderr: {}'.format(stderr))
 
-        raise RemoteProcessFailedError(args,
-                                       proc.returncode,
-                                       status_meaning.get(proc.returncode),
-                                       stdout,
-                                       stderr, )
+        raise RemoteProcessFailedError(
+            args,
+            proc.returncode,
+            status_meaning.get(proc.returncode),
+            stdout,
+            stderr, )
 
     return stdout, stderr, proc.returncode
 
@@ -97,8 +98,8 @@ def sudo(user=None, password=None, timestamp_timeout=2 * 60):
                 # password. note that this is visible on the sudo invocation
                 # and therefore not a security measure
                 prompt_cookie = hexlify(urandom(40))
-                log.debug('Prompt cookie for sudo refresh: {}'.format(
-                    prompt_cookie))
+                log.debug(
+                    'Prompt cookie for sudo refresh: {}'.format(prompt_cookie))
 
                 # we need to refresh the sudo timestamp
                 refresh_args = [
@@ -140,8 +141,8 @@ def sudo(user=None, password=None, timestamp_timeout=2 * 60):
     orig_popen = remote.popen
     remote.popen = sudo_popen
 
-    sftp_cmd = ' '.join([shlex_quote(part) for part in sudo_args] + [config[
-        'sftp_location']])
+    sftp_cmd = ' '.join([shlex_quote(part)
+                         for part in sudo_args] + [config['sftp_location']])
 
     # override sftp subsystem
     config['sftp_command'] = sftp_cmd

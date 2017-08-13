@@ -9,9 +9,10 @@ debian = Plan(__name__, os.path.dirname(__file__))
 
 @operation()
 def enable_auto_upgrades(boot_time='10min', unit_active_time='1d', start=True):
-    timer_tpl = debian.templates.render('autoupdate.timer',
-                                        boot_time=boot_time,
-                                        unit_active_time=unit_active_time)
+    timer_tpl = debian.templates.render(
+        'autoupdate.timer',
+        boot_time=boot_time,
+        unit_active_time=unit_active_time)
 
     c = False
     # install both timer and service

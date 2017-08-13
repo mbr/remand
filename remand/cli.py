@@ -97,8 +97,9 @@ def cli(context, pkg_path, configfiles, debug, confvars):
 @cli.command(help='Runs a plan on a number of servers')
 @click.argument('plan', type=click.Path(exists=True))
 @click.argument('uris', default=None, nargs=-1, type=Uri.from_string)
+@click.option('--objective', '-O', default=None, help='Objective name to run')
 @click.pass_obj
-def run(obj, plan, uris):
+def run(obj, plan, uris, objective):
     failures = False
 
     with obj['plugin_source']:
@@ -155,9 +156,9 @@ def run(obj, plan, uris):
                 if use_sudo:
                     log.debug('using sudo to execute plan')
                     with proc.sudo():
-                        plan.execute()
+                        plan.execute(objective)
                 else:
-                    plan.execute()
+                    plan.execute(objective)
             except ReconnectNeeded as e:
                 log.notice('A reconnect has been requested by {}'.format(e))
 

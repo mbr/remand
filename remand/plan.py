@@ -211,17 +211,23 @@ class Plan(object):
         if objective is None:
             if len(self.objectives) != 1:
                 raise ValueError('No objective given, but plan {} has {} '
-                                 'objectives'.format(self, len(
-                                     self.objectives)))
+                                 'objectives'.format(self,
+                                                     len(self.objectives)))
 
-            objective = self.objectives.values()[0]
+            obj = self.objectives.values()[0]
         else:
-            objective = self.objectives[objective]
+            obj = self.objectives.get(objective)
+
+            if obj is None:
+                raise ValueError(
+                    'Objective {!r} not found. Valid objectives are {}'.
+                    format(objective, ', '.join(
+                        repr(o.__name__) for o in self.objectives.values())))
 
         # got our objective, now run it
 
         try:
-            return objective()
+            return obj()
         except RebootNeeded as e:
             log.warning('A reboot has been request on behalf of {}'.format(e))
 
@@ -231,7 +237,7 @@ class Plan(object):
                     'Rebooting, will reconnect after {} seconds'.format(delay))
                 posix.reboot()
                 time.sleep(delay)
-                raise ReconnectNeeded(objective)
+                raise ReconnectNeeded(obj)
             else:
                 log.error('Automatic reboots disabled, cannot continue.')
 

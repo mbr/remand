@@ -18,8 +18,8 @@ def enable_letsencrypt(auto_reload=True, remove_default=True):
 
     fs.create_dir('/var/www/html/.well-known')
     fs.create_dir('/var/www/html/.well-known/acme-challenge')
-    fs.chmod('/var/www/html/.well-known', mode=0o555)
-    fs.chmod('/var/www/html/.well-known/acme-challenge', mode=0o555)
+    fs.chmod('/var/www/html/.well-known', mode=0o755)
+    fs.chmod('/var/www/html/.well-known/acme-challenge', mode=0o755)
 
     if remove_default:
         changed |= fs.remove_file('/etc/nginx/sites-enabled/default').changed

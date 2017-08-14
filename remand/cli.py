@@ -42,6 +42,12 @@ APP_NAME = 'remand'
     is_flag=True,
     default=False)
 @click.option(
+    '--debug-ssh',
+    '-D',
+    help='Output paramiko debugging info when `--debug` is enabled',
+    is_flag=True,
+    default=False, )
+@click.option(
     '--pkg-path', '-L', multiple=True, help='Additional search paths for pkgs')
 @click.option(
     'configfiles',
@@ -58,7 +64,7 @@ APP_NAME = 'remand'
     type=click.Tuple((str, str)),
     help='Set configuration values directly')
 @click.pass_context
-def cli(context, pkg_path, configfiles, debug, confvars):
+def cli(context, pkg_path, configfiles, debug, confvars, debug_ssh):
     pkg_path = list(pkg_path)
     if 'REMAND_PKG_PATH' in os.environ:
         pkg_path.extend(os.environ['REMAND_PKG_PATH'].split(os.pathsep))
@@ -79,6 +85,11 @@ def cli(context, pkg_path, configfiles, debug, confvars):
     # setup logging
     logbook.compat.redirect_logging()
     handler.push_application()
+
+    if not debug_ssh:
+        logbook.NullHandler(
+            filter=lambda r, h: r.channel.startswith('paramiko')
+        ).push_application()
 
     # read configuration and host registry
     obj['config'] = load_configuration(APP_NAME, configfiles)

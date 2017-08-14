@@ -207,7 +207,10 @@ def install_packages(pkgs,
                      release=None,
                      max_age=3600,
                      force=False):
-    if check_first and set(pkgs) < set(info_installed_packages().keys()):
+
+    # check if packages are already installed, ignoring version and arch
+    if check_first and set(pkgs) < set(
+            k.rsplit(':', 1)[0] for k in info_installed_packages().keys()):
         return Unchanged(msg='Already installed: {}'.format(' '.join(pkgs)))
 
     update(max_age)

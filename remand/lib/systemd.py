@@ -1,5 +1,8 @@
+from contextlib import contextmanager
 from functools import partial
 import os
+
+import logbook
 
 from remand import config
 from remand.operation import operation, Changed, Unchanged
@@ -7,6 +10,8 @@ from remand.lib import fs, proc
 
 UNIT_EXTS = ('.target', '.service', '.socket', '.timer', '.mount')
 NETWORK_EXTS = ('.network', '.netdev', '.link')
+
+log = logbook.Logger('systemd')
 
 
 # FIXME: should be info?
@@ -173,3 +178,22 @@ def reload_unit(unit_name, only_if_running=False):
 def daemon_reload():
     proc.run([config['cmd_systemctl'], 'daemon-reload'])
     return Changed(msg='systemd daemon-reload\'ed')
+
+
+@contextmanager
+def suspended(units):
+    try:
+        # stop all units passed. we're doing this inside the try to restart
+        # them if something fails during stopping
+        for unit in units:
+            stop_unit(unit)
+
+        yield
+    finally:
+        # restart units in reverse order, ignoring errors
+        for unit in reversed(units):
+            try:
+                start_unit(unit)
+            except Exception as e:
+                log.warning('Ignored exception during unit `{}` restart: {}'.
+                            format(unit, e))

@@ -160,6 +160,16 @@ def restart_unit(unit_name, only_if_running=False):
 
 
 @operation()
+def reload_unit(unit_name, only_if_running=False):
+    if only_if_running:
+        cmd = 'reload-or-try-restart'
+    else:
+        cmd = 'reload-or-restart'
+    proc.run([config['cmd_systemctl'], cmd, unit_name])
+    return Changed(msg='Reloaded {}'.format(unit_name))
+
+
+@operation()
 def daemon_reload():
     proc.run([config['cmd_systemctl'], 'daemon-reload'])
     return Changed(msg='systemd daemon-reload\'ed')

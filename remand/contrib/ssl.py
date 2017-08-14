@@ -54,7 +54,8 @@ def install_cert(cert, key, cert_name=None, key_name=None):
     changed = False
     changed |= fs.upload_file(cert, cert_rpath).changed
     changed |= fs.upload_file(key, key_rpath).changed
-    changed |= fs.chmod(key_rpath, 0o600).changed
+    changed |= fs.chmod(key_rpath, 0o640).changed
+    changed |= fs.chown(key_rpath, uid='root', gid='ssl-cert').changed
 
     if changed:
         return Changed(msg='Uploaded key pair {}/{}'.format(

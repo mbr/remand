@@ -112,3 +112,7 @@ def write_all(dest, input, bufsize=4096):
     else:
         # log.debug('write_all: Input sent')
         dest.write(input)
+
+
+def any_changed(*args):
+    return any(map(lambda res: res.changed, args))

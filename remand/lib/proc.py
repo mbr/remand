@@ -147,7 +147,9 @@ def sudo(user=None, password=None, timestamp_timeout=2 * 60):
     # override sftp subsystem
     config['sftp_command'] = sftp_cmd
 
-    yield
-    remote.popen = orig_popen
+    try:
+        yield
+    finally:
+        remote.popen = orig_popen
 
     # FIXME: remove sudo credentials

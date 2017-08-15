@@ -419,8 +419,12 @@ class SSHRemote(Remote):
             #        (server unexpectedly closed the connection)
             #
             #        maybe check once beforehand for the present of the tool?
+            #
+            # FIXME: this issue will also occur if the wrong netcat is
+            # installed (`netcat-traditional` vs `netcat-openbsd`)
             raise ValueError('cmd.nc-openbsd is required for unix socket '
                              'connections via SSH')
+
         p = self.popen([config['cmd_nc-openbsd'], '-U', addr])
         return p._channel
 

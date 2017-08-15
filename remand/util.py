@@ -116,3 +116,9 @@ def write_all(dest, input, bufsize=4096):
 
 def any_changed(*args):
     return any(map(lambda res: res.changed, args))
+
+
+def parse_dotenv(buf):
+    return dict(
+        line.split('=', 1) for line in buf.splitlines()
+        if line.strip() and not line.strip().startswith('#'))

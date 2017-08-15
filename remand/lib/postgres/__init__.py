@@ -36,6 +36,20 @@ class PostgreSQL(object):
 
     @contextmanager
     def manager(self):
+        """Create a new postgres manager.
+
+        Any operation done to a postgres database must be performed inside
+        a manager. The manage will change the current `uid` for *all*
+        operations to `postgres`; for this reason it is important to not
+        perform any other operation while inside this contextmanager.
+
+        Furthermore, establishing a connection requires that OpenBSD-style
+        netcat is installed on the target system. Be aware that most
+        debian-systems install a "traditional" netcat by default (package
+        `netcat-traditional` instead of `netcat-openbsd`). Using traditional
+        netcat will result in errors proclaiming unexpected closing of the
+        socket.
+        """
         with ExitStack() as stack:
             dtmp = stack.enter_context(volatile.dir())
             sock_addr = os.path.join(dtmp, '.s.PGSQL.5432')

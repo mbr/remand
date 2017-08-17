@@ -141,7 +141,7 @@ class Manager(object):
                 'INHERIT' if inherit else 'NOINHERIT',
                 'LOGIN' if login else 'NOLOGIN',
                 'CONNECTION LIMIT :connection_limit',
-                'PASSWORD :pw' if password is not None else 'NOPASSWORD',
+                'PASSWORD :pw' if password is not None else '',
             ]))
 
             sess.connection().execute(

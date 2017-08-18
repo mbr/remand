@@ -118,6 +118,28 @@ class Manager(object):
         return Changed(msg='Created database {}'.format(name))
 
     @operation()
+    def drop_database(self, name):
+        assert name.isalnum()
+
+        # check if database exists
+        qry = 'SELECT datname FROM pg_database'
+        dbs = [row[0] for row in self.engine.execute(qry)]
+
+        if name not in dbs:
+            return Unchanged(
+                'Database {} already dropped/nonexistant'.format(name))
+
+        sql = text('DROP DATABASE ' + pg_valid(name))
+
+        with self.session(autocommit=True) as sess:
+            con = sess.connection()
+
+            con.execute('COMMIT')
+            con.execute(sql)
+
+        return Changed(msg='Dropped database {}'.format(name))
+
+    @operation()
     def create_role(self,
                     name,
                     password=None,

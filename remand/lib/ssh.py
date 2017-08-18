@@ -64,6 +64,7 @@ def set_authorized_keys(files, user='root', fix_permissions=True):
 
     if upload.changed and fix_permissions:
         fs.chmod(ak_file, AK_FILE_PERMS)
+        fs.chown(ak_file, uid=user)
 
     fps = ', '.join(k.readable_fingerprint for k in kf.keys)
 
@@ -87,6 +88,7 @@ def init_authorized_keys(user='root', fix_permissions=True):
 
     if fix_permissions:
         changed |= fs.chmod(ak_dir, AK_DIR_PERMS).changed
+        changed |= fs.chown(ak_dir, uid=user).changed
 
     # check if the authorized keys file exists
     if not remote.lstat(ak_file):
@@ -94,6 +96,7 @@ def init_authorized_keys(user='root', fix_permissions=True):
 
     if fix_permissions:
         changed |= fs.chmod(ak_file, AK_FILE_PERMS).changed
+        changed |= fs.chown(ak_dir, uid=user).changed
 
     # at this point, we have fixed permissions for file and dir, as well as
     # ensured they exist. however, they might still be owned by root

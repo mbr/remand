@@ -183,6 +183,7 @@ class Plan(object):
     def __init__(self, name, resource_dir=None):
         self.name = name
         self.resource_dir = None
+
         if resource_dir is not None:
             self.set_resouce_dir(resource_dir)
 
@@ -190,18 +191,18 @@ class Plan(object):
         self.dependencies = []
 
         self.files = FileResourceHandler(self, 'files')
-        self.webfiles = WebResourceHandler(self, 'webfiles')
         self.templates = TemplateResourceHandler(self, 'templates')
-
-        # FIXME: this needs cleanup, badly
-        if self.resource_dir:
-            self.webfiles._load_from_ini(self)
 
     def __repr__(self):
         return '{}({!r})'.format(self.__class__.__name__, self.name)
 
     def set_resouce_dir(self, resource_dir):
         self.resource_dir = os.path.abspath(resource_dir)
+
+        self.webfiles = WebResourceHandler(self, 'webfiles')
+
+        if self.resource_dir:
+            self.webfiles._load_from_ini(self)
 
     def depends_on(self, plan):
         self.dependencies.append(plan)
@@ -254,6 +255,7 @@ class Plan(object):
     @classmethod
     def load_from_file(cls, path):
         plan_id = str(uuid.uuid4()).replace('-', '')
+
         mod = imp.load_source('_remand_plan_' + plan_id, path)
 
         candidates = [

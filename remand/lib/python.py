@@ -46,7 +46,7 @@ class VirtualEnv(object):
         return self.get_bin('pip')
 
     @operation()
-    def install(self, pkgs, upgrade=True, editable=False):
+    def install(self, pkgs, upgrade=True, reinstall=False, editable=False):
         # FIXME: collect changes
 
         args = [self.pip, 'install']
@@ -54,6 +54,8 @@ class VirtualEnv(object):
             args.append('-e')
         if upgrade:
             args.append('-U')
+        if reinstall:
+            args.append('-I')
         args.extend(pkgs)
 
         proc.run(args)

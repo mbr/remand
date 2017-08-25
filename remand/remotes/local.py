@@ -33,7 +33,7 @@ class LocalRemote(Remote):
         #    return None
 
     mkdir = os.mkdir
-    normalize = lambda path: os.path.abspath(os.path.realpath(path))
+    normalize = lambda _, path: os.path.abspath(os.path.realpath(path))
     readlink = os.readlink
     rename = lambda oldpath, newpath: os.rename(oldpath, newpath)
 

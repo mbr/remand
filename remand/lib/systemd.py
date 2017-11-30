@@ -6,12 +6,35 @@ import logbook
 
 from remand import config
 from remand.operation import operation, Changed, Unchanged
-from remand.lib import fs, proc
+from remand.lib import fs, memoize, proc
 
 UNIT_EXTS = ('.target', '.service', '.socket', '.timer', '.mount')
 NETWORK_EXTS = ('.network', '.netdev', '.link')
 
 log = logbook.Logger('systemd')
+
+
+@memoize()
+def info_timedatestatus():
+    stdout, _, _ = proc.run(['timedatectl', 'status'])
+
+    vals = {}
+    for line in stdout.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+
+        k, v = line.strip().split(':', 1)
+        k = k.strip()
+        v = v.strip()
+
+        if v == 'yes':
+            v = True
+        if v == 'no':
+            v = False
+        vals[k] = v
+
+    return vals
 
 
 # FIXME: should be info?
@@ -178,6 +201,14 @@ def reload_unit(unit_name, only_if_running=False):
 def daemon_reload():
     proc.run([config['cmd_systemctl'], 'daemon-reload'])
     return Changed(msg='systemd daemon-reload\'ed')
+
+
+@operation()
+def set_ntp(enable):
+    if info_timedatestatus()['NTP synchronized'] != bool(enable):
+        proc.run(['timedatectl', 'set-ntp', 'true' if enable else 'false'])
+        return Changed(msg='Set NTP synchronization to {}'.format(enable))
+    return Unchanged(msg='Not changing NTP sychronization')
 
 
 @contextmanager

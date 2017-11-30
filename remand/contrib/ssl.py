@@ -29,7 +29,6 @@ def generate_self_signed_cert(hostname):
 
 @operation()
 def ensure_certificate(hostname):
-    # FIXME: use `ssl.install_cert` here?
     cert_rpath = remote.path.join(config['sslcert_cert_dir'],
                                   hostname + '.crt')
     chain_rpath = remote.path.join(config['sslcert_cert_dir'],
@@ -45,6 +44,7 @@ def ensure_certificate(hostname):
 
         key, cert = generate_self_signed_cert(hostname)
 
+        # FIXME: maybe use install cert here.
         fs.upload_string(key, key_rpath)
         fs.upload_string(cert, cert_rpath)
         fs.upload_string(cert, chain_rpath)

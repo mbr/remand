@@ -26,6 +26,10 @@ def generate_self_signed_cert(hostname):
 
 @operation()
 def install_cert(cert, key, cert_name=None, key_name=None):
+    """Installs an SSL certificate with including key on the remote
+
+    Certificate filenames are unchanged, per default they will be installed in
+    `/etc/ssl`, with the corresponding keys at `/etc/ssl/private`."""
     cert_name = cert_name or os.path.basename(cert)
     key_name = key_name or os.path.basename(key)
 

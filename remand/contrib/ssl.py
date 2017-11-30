@@ -5,6 +5,25 @@ from remand.lib import fs
 from remand.exc import ConfigurationError
 
 
+def generate_self_signed_cert(hostname):
+    # FIXME: instead of openssl, use cryptography/nacl?
+    with volatile.dir() as tmp:
+        log.info('Generating new temporary self-signed certificate')
+        subprocess.check_output(
+            [
+                'openssl', 'req', '-x509', '-subj', '/CN=' + hostname,
+                '-nodes', '-newkey', 'rsa:4096', '-keyout', 'snakeoil.pem',
+                '-out', 'snakeoil.crt', '-days', '7'
+            ],
+            cwd=tmp,
+            stderr=subprocess.STDOUT)
+
+        cert = open(os.path.join(tmp, 'snakeoil.crt')).read()
+        key = open(os.path.join(tmp, 'snakeoil.pem')).read()
+
+    return key, cert
+
+
 @operation()
 def install_cert(cert, key, cert_name=None, key_name=None):
     cert_name = cert_name or os.path.basename(cert)

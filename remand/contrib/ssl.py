@@ -28,6 +28,37 @@ def generate_self_signed_cert(hostname):
 
 
 @operation()
+def ensure_certificate(hostname):
+    # FIXME: use `ssl.install_cert` here?
+    cert_rpath = remote.path.join(config['sslcert_cert_dir'],
+                                  hostname + '.crt')
+    chain_rpath = remote.path.join(config['sslcert_cert_dir'],
+                                   hostname + '.chain.crt')
+    key_rpath = remote.path.join(config['sslcert_key_dir'], hostname + '.pem')
+
+    # first, ensure any certificate exists on the host. otherwise,
+    # webservers like nginx will likely not start
+    if not (remote.lstat(cert_rpath) and remote.lstat(key_rpath)
+            and remote.lstat(chain_rpath)):
+        log.debug('Remote certificate {}, key {}, chain {} not found'.format(
+            cert_rpath, key_rpath, chain_rpath))
+
+        key, cert = generate_self_signed_cert(hostname)
+
+        fs.upload_string(key, key_rpath)
+        fs.upload_string(cert, cert_rpath)
+        fs.upload_string(cert, chain_rpath)
+
+        return Changed(
+            msg='No certificate {} / key {} / chain {} found. A self-signed '
+            'certficate from a reputable snake-oil vendor was installed.'.
+            format(cert_rpath, key_rpath, chain_rpath))
+
+    return Unchanged(
+        'Certificate for hostname {} already preset'.format(hostname))
+
+
+@operation()
 def install_cert(cert, key, cert_name=None, key_name=None):
     """Installs an SSL certificate with including key on the remote
 

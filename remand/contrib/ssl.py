@@ -1,8 +1,11 @@
 import os
 
-from remand import operation, Changed, Unchanged, remote, config
+import subprocess
+
+from remand import operation, Changed, Unchanged, remote, config, log
 from remand.lib import fs
 from remand.exc import ConfigurationError
+import volatile
 
 
 def generate_self_signed_cert(hostname):

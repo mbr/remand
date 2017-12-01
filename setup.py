@@ -36,6 +36,7 @@ setup(
         'paramiko',  # needs our bugfix!
         'sqlalchemy',
         'sqlalchemy-pgcatalog',
+        'psycopg2',
         'contextlib2',
         # chardet is a hidden dependency of python-debian
         'python-debian',

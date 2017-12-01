@@ -35,7 +35,7 @@ setup(
         'sshkeys',
         'paramiko',  # needs our bugfix!
         # 'sqlalchemy',
-        # 'postgres_pgcatalog',
+        # 'sqlalchemy-pgcatalog',
         'contextlib2',
         # chardet is a hidden dependency of python-debian
         'python-debian',

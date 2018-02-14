@@ -195,3 +195,23 @@ def install_private_key(key_file,
         return Changed(msg='Installed private key {}'.format(target_path))
     return Unchanged(
         msg='Private key {} already installed'.format(target_path))
+
+
+@operation()
+def install_hostkeys(base_dir):
+    results = []
+
+    for key_type in ('ecdsa', 'ed25519', 'rsa'):
+        fn = 'ssh_host_' + key_type + '_key'
+        pub_fn = fn + '.pub'
+        sk = os.path.join(base_dir, fn)
+        pk = os.path.join(base_dir, pub_fn)
+
+        results.append(fs.upload_file(sk, '/etc/ssh/' + fn))
+        results.append(fs.upload_file(pk, '/etc/ssh/' + pub_fn))
+
+    if util.any_changed(*results):
+        systemd.reload_unit('ssh.service')
+        return Changed(msg='Installed SSH hostkeys from {}'.format(base_dir))
+
+    return Unchanged(msg='SSH hostkeys already installed')

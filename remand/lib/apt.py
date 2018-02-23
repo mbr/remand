@@ -410,7 +410,7 @@ def install_source_list(path, name=None, main=False):
 @operation()
 def add_repo(distribution,
              components=['main'],
-             site='http://httpredir.debian.org/debian',
+             site='http://deb.debian.org/debian',
              src=False,
              arch=[],
              name=None):

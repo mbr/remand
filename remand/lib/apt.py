@@ -153,11 +153,13 @@ def add_apt_keys(key_filename, fingerprints=None):
         with open(key_filename, 'r') as k:
             proc.run(['apt-key', 'add', '-'], input=k)
 
-        return Changed(msg='Added missing apt keys: {}'.format(
-            ', '.join(id_from_fingerprint(fp) for fp in sorted(missing_fps))))
+        return Changed(
+            msg='Added missing apt keys: {}'.format(', '.join(
+                id_from_fingerprint(fp) for fp in sorted(missing_fps))))
 
-    return Unchanged(msg='Apt keys {} already installed'.format(
-        ', '.join(id_from_fingerprint(fp) for fp in sorted(local_fps))))
+    return Unchanged(
+        msg='Apt keys {} already installed'.format(', '.join(
+            id_from_fingerprint(fp) for fp in sorted(local_fps))))
 
 
 @operation()
@@ -425,7 +427,8 @@ def add_repo(distribution,
         options,
         site,
         distribution,
-        comps, )
+        comps,
+    )
 
     if name is None:
         name = '{}_{}{}'.format(distribution, '_'.join(components), ''
